@@ -1,0 +1,21 @@
+{
+  "hostname": "YourDomain.com",
+  "port": 8080,
+
+  "SSL": {
+    "fullchain": "PATH_TO_FULLCHAIN",
+    "privkey": "PATH_TO_PRIVKEY"
+  },
+
+  "JKS": {
+    "file": "keystore.jks",
+    "password": "SECURE_PASSWORD",
+    "validity": 365,
+    "CN": "Your Name",
+    "OU": "Your Organization Unit",
+    "O": "Your Organization",
+    "L": "Your City",
+    "ST": "Your State",
+    "C": "Your Country"
+  }
+}
