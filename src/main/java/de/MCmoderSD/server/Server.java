@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -195,20 +197,26 @@ public class Server {
     }
 
     /**
-     * Generates a KeyStore file as an InputStream.
+     * Generates a new keystore file with a self-signed certificate, moves it to a temporary directory,
+     * and returns it as an {@link InputStream}.
      *
-     * @param FN       The filename for the keystore.
-     * @param PW       The password for the keystore.
-     * @param validity The validity period of the keystore in days.
-     * @param CN       The Common Name for the certificate.
-     * @param OU       The Organizational Unit for the certificate.
-     * @param O        The Organization for the certificate.
-     * @param L        The Locality for the certificate.
-     * @param ST       The State for the certificate.
-     * @param C        The Country for the certificate.
-     * @return An InputStream of the generated keystore.
-     * @throws IOException           If an I/O error occurs.
-     * @throws InterruptedException  If the process is interrupted.
+     * <p>This method creates a keystore file with the specified parameters, ensures any existing
+     * keystore file with the same name is deleted, and uses the Java `keytool` utility to generate a new keystore.
+     * After creation, the keystore is relocated to a temporary directory, and its {@link InputStream}
+     * is returned for further processing.
+     *
+     * @param FN       the filename for the keystore file.
+     * @param PW       the password for securing the keystore.
+     * @param validity the validity period of the self-signed certificate, in days.
+     * @param CN       the Common Name (CN) field for the distinguished name in the certificate.
+     * @param OU       the Organizational Unit (OU) field for the distinguished name.
+     * @param O        the Organization (O) field for the distinguished name.
+     * @param L        the Locality (L) field for the distinguished name.
+     * @param ST       the State (ST) field for the distinguished name.
+     * @param C        the Country (C) field for the distinguished name.
+     * @return an {@link InputStream} containing the keystore file data.
+     * @throws IOException          if an I/O error occurs during file operations or process execution.
+     * @throws InterruptedException if the `keytool` process is interrupted during execution.
      */
     public static InputStream generateKeyStore(String FN, char[] PW, int validity, String CN, String OU, String O, String L, String ST, String C) throws IOException, InterruptedException {
 
@@ -239,9 +247,10 @@ public class Server {
 
         // Move keystore file to temp directory
         File keystore = new File(FN);
-        boolean moveSuccess = keystore.renameTo(new File(tempDir + FN));
-        keystore = new File(tempDir + FN);
-        if (!moveSuccess) throw new IOException("Error occurred. Could not move file. File: " + keystore.getAbsolutePath());
+        File destination = new File(tempDir + FN);
+        Files.copy(keystore.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        if (!keystore.delete()) throw new IOException("Error occurred. Could not delete original file. File: " + keystore.getAbsolutePath());
+        keystore = destination;
 
         // Return the keystore file as an InputStream
         FileInputStream inputStream = new FileInputStream(keystore);
