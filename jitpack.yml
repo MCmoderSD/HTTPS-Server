@@ -1,6 +1,0 @@
-jdk:
-  - zulu-21
-install:
-  - sdk install maven 3.9.9
-build:
-  - mvn clean install -U
