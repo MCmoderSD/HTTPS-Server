@@ -73,7 +73,7 @@
           run: mvn clean
 
         - name: Install
-          run: mvn install
+          run: mvn install -U
 
         - name: Deploy
           run: mvn deploy

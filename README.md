@@ -60,7 +60,7 @@ To configure the server, create a JSON file with the following structure:
 3. **SSL** Configuration (**SSL** object):
 - **fullchain**: Path to the SSL/TLS certificate's full chain file.
 - **privkey**: Path to the private key associated with the certificate.
-4. **JKS Configuration** (**JKS** object):
+    4. **JKS Configuration** (**JKS** object):
 - **file**: Path to the Java KeyStore (JKS) file.
 - **password**: Password for accessing the KeyStore.
 - **validity**: The validity of generated certificates (in days).
