@@ -24,7 +24,7 @@ Add the dependency to your `pom.xml` file:
 <dependency>
     <groupId>com.github.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
