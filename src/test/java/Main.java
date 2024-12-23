@@ -28,7 +28,7 @@ public class Main {
 
         // Start the server
         jksServer.start();
-        System.out.println("Server started on https://" + jksServer.getHostname() + ":" + jksServer.getPort() + "/example");
+        System.out.println(jksServer.getURL() + "/example");
 
         // Add a handler to the server
         jksServer.getHttpsServer().createContext("/example", new ExampleHandler());
@@ -48,7 +48,7 @@ public class Main {
 
         // Start the server
         sslServer.start();
-        System.out.println("Server started on https://" + sslServer.getHostname() + ":" + sslServer.getPort() + "/example");
+        System.out.println(sslServer.getURL() + "/example");
 
         // Add a handler to the server
         sslServer.getHttpsServer().createContext("/example", new ExampleHandler());
@@ -70,7 +70,7 @@ public class Main {
             JsonNode jksConfig = config.get("JKS");
 
             // Create a server with JKS configuration
-            server = new Server("localhost", 8080, jksConfig);
+            server = new Server("localhost", 8000, jksConfig);
         } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InterruptedException | KeyManagementException e) {
             System.err.println("Failed to create server with JKS configuration: " + e.getMessage());
         }
