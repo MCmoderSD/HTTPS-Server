@@ -291,6 +291,15 @@ public class Server {
     }
 
     /**
+     * Returns the URL of the server.
+     *
+     * @return The URL.
+     */
+    public String getURL() {
+        return "https://" + hostname + ":" + port;
+    }
+
+    /**
      * Returns the hostname of the server.
      *
      * @return The hostname.

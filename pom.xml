@@ -6,7 +6,7 @@
 
     <groupId>de.MCmoderSD</groupId>
     <artifactId>server</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <name>HTTPS-Server</name>
     <description>A simple HTTPS server implementation using Java's built-in classes</description>
