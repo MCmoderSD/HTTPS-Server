@@ -68,12 +68,16 @@
             echo "        </server>" >> ~/.m2/settings.xml
             echo "    </servers>" >> ~/.m2/settings.xml
             echo "</settings>" >> ~/.m2/settings.xml
-  
-        - name: Build and Deploy
-          env:
-            GITHUB_TOKEN: ${{ env.token }}
-          run: mvn clean install deploy -DskipTests
-  
+
+        - name: Clean
+          run: mvn clean
+
+        - name: Install
+          run: mvn install
+
+        - name: Deploy
+          run: mvn deploy
+
         - name: Install GitHub CLI and authenticate
           run: |
             curl -sSL https://github.com/cli/cli/releases/download/v2.63.2/gh_2.63.2_linux_amd64.deb -o gh-cli.deb
