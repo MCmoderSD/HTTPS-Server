@@ -19,6 +19,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4.6.0
@@ -103,6 +105,19 @@ jobs:
             fi
           fi
 
+      - name: Get latest existing release tag
+        run: |
+          TAG=$(git tag --sort=-creatordate | grep -v "${{ env.version }}" | head -n 1 || true)
+          if [ -z "$TAG" ]; then
+            echo "No previous tag found."
+            CHANGELOG_URL="https://github.com/${{ github.repository }}/commits/${{ env.version }}"
+          else
+            echo "Previous tag: $TAG"
+            CHANGELOG_URL="https://github.com/${{ github.repository }}/compare/$TAG...${{ env.version }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_ENV
+          echo "changelog_url=$CHANGELOG_URL" >> $GITHUB_ENV
+
       - name: Calculate Hashes
         run: |
           FILE=target/${{ env.artifact }}.jar
@@ -121,8 +136,7 @@ jobs:
           tag_name: ${{ env.version }}
           name: "${{ env.repository}} - Release ${{ env.version }}"
           body: |
-            **Full Changelog**: https://github.com/MCmoderSD/${{ env.repository}}/commits/${{ env.version }}
-
+            **Full Changelog**: ${{ env.changelog_url }}
 
             ## Checksums:
 
