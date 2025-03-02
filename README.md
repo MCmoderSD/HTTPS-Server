@@ -22,7 +22,7 @@ Add the dependency to your `pom.xml` file:
 ```xml
 <dependency>
     <groupId>de.MCmoderSD</groupId>
-    <artifactId>JsonUtility</artifactId>
+    <artifactId>HTTPS-Server</artifactId>
     <version>1.1.0</version>
 </dependency>
 ```
