@@ -1,6 +1,4 @@
 # HTTPS-Server
-[![](https://jitpack.io/v/MCmoderSD/HTTPS-Server.svg)](https://jitpack.io/#MCmoderSD/HTTPS-Server)
-
 
 ## Description
 A simple HTTPS server implementation using Java's built-in `HttpServer` and `SSLContext` classes.
@@ -10,21 +8,22 @@ You can create a server with either a Java KeyStore (JKS) configuration or an SS
 ## Usage
 
 ### Maven
-Make sure you have the JitPack repository added to your `pom.xml` file:
+Make sure you have my Sonatype Nexus OSS repository added to your `pom.xml` file:
 ```xml
 <repositories>
     <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
+        <id>Nexus</id>
+        <name>Sonatype Nexus</name>
+        <url>https://mcmodersd.de/nexus/repository/maven-releases/</url>
     </repository>
 </repositories>
 ```
 Add the dependency to your `pom.xml` file:
 ```xml
 <dependency>
-    <groupId>com.github.MCmoderSD</groupId>
-    <artifactId>HTTPS-Server</artifactId>
-    <version>1.0.3</version>
+    <groupId>de.MCmoderSD</groupId>
+    <artifactId>JsonUtility</artifactId>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -34,6 +33,7 @@ To configure the server, create a JSON file with the following structure:
 {
   "hostname": "YourDomain.com",
   "port": 8080,
+  "host": true,
 
   "SSL": {
     "fullchain": "PATH_TO_FULLCHAIN",
@@ -57,6 +57,7 @@ To configure the server, create a JSON file with the following structure:
 #### Explanation of Configuration
 1. **hostname**: The domain name or IP address where the server will be hosted.
 2. **port**: The port on which the server will listen.
+3. **host** If set to true, the server will listen on all available interfaces.
 3. **SSL** Configuration (**SSL** object):
 - **fullchain**: Path to the SSL/TLS certificate's full chain file.
 - **privkey**: Path to the private key associated with the certificate.
@@ -92,100 +93,102 @@ import java.util.Scanner;
 
 public class Main {
 
-  private static final JsonUtility jsonUtility = new JsonUtility();
-  private static final Scanner scanner = new Scanner(System.in);
+    private static final JsonUtility jsonUtility = new JsonUtility();
+    private static final Scanner scanner = new Scanner(System.in);
 
-  public static void main(String[] args) {
+    public static void main(String[] args) {
 
-    // Create a server with JKS configuration
-    System.out.println("Creating a server with JKS configuration");
-    Server jksServer = createJKSServer();
+        // Create a server with JKS configuration
+        System.out.println("Creating a server with JKS configuration");
+        Server jksServer = createJKSServer();
 
-    // Start the server
-    jksServer.start();
-    System.out.println(jksServer.getURL() + "/example");
+        // Start the server
+        jksServer.start();
+        System.out.println(jksServer.getURL() + "/example");
 
-    // Add a handler to the server
-    jksServer.getHttpsServer().createContext("/example", new ExampleHandler());
+        // Add a handler to the server
+        jksServer.getHttpsServer().createContext("/example", new ExampleHandler());
 
-    // Wait for the user to stop the server
-    System.out.println("Press enter to stop the server");
-    scanner.nextLine();
-    jksServer.stop();
-
-
+        // Wait for the user to stop the server
+        System.out.println("Press enter to stop the server");
+        scanner.nextLine();
+        jksServer.stop();
 
 
 
-    // Create a Server with SSL configuration
-    System.out.println("Creating a server with SSL configuration");
-    Server sslServer = createSSLServer();
 
-    // Start the server
-    sslServer.start();
-    System.out.println(sslServer.getURL() + "/example");
 
-    // Add a handler to the server
-    sslServer.getHttpsServer().createContext("/example", new ExampleHandler());
+        // Create a Server with SSL configuration
+        System.out.println("Creating a server with SSL configuration");
+        Server sslServer = createSSLServer();
 
-    // Wait for the user to stop the server
-    System.out.println("Press enter to stop the server");
-    scanner.nextLine();
-    sslServer.stop();
-  }
+        // Start the server
+        sslServer.start();
+        System.out.println(sslServer.getURL() + "/example");
 
-  private static Server createJKSServer() {
+        // Add a handler to the server
+        sslServer.getHttpsServer().createContext("/example", new ExampleHandler());
 
-    Server server = null;
-
-    try {
-
-      // Load the configuration from a file
-      JsonNode config = jsonUtility.load("/config.json");
-      JsonNode jksConfig = config.get("JKS");
-
-      // Create a server with JKS configuration
-      server = new Server("localhost", 8000, jksConfig);
-    } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InterruptedException | KeyManagementException e) {
-      System.err.println("Failed to create server with JKS configuration: " + e.getMessage());
+        // Wait for the user to stop the server
+        System.out.println("Press enter to stop the server");
+        scanner.nextLine();
+        sslServer.stop();
     }
 
-    return server;
-  }
+    private static Server createJKSServer() {
 
-  private static Server createSSLServer() {
+        Server server = null;
 
-    Server server = null;
+        try {
 
-    try {
+            // Load the configuration from a file
+            JsonNode config = jsonUtility.load("/config.json");
+            JsonNode jksConfig = config.get("JKS");
+            boolean hostNetwork = config.get("host").asBoolean();
 
-      // Load the configuration from a file
-      JsonNode config = jsonUtility.load("/config.json");
+            // Create a server with JKS configuration
+            server = new Server("localhost", 8000, jksConfig, hostNetwork);
+        } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InterruptedException | KeyManagementException e) {
+            System.err.println("Failed to create server with JKS configuration: " + e.getMessage());
+        }
 
-      // Load the SSL configuration
-      JsonNode sslConfig = config.get("SSL");
-      String fullchain = sslConfig.get("fullchain").asText();
-      String privkey = sslConfig.get("privkey").asText();
-
-      // Create a server with SSL configuration
-      server = new Server("YourDomain.com", 8080, privkey, fullchain);
-    } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InvalidKeySpecException | KeyManagementException e) {
-      System.err.println("Failed to create server with SSL configuration: " + e.getMessage());
+        return server;
     }
 
-    return server;
-  }
+    private static Server createSSLServer() {
 
-  // Example of a http handler
-  private static class ExampleHandler implements HttpHandler {
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-      String response = "This is an example response";
-      exchange.sendResponseHeaders(200, response.getBytes().length);
-      OutputStream os = exchange.getResponseBody();
-      os.write(response.getBytes());
-      os.close();
+        Server server = null;
+
+        try {
+
+            // Load the configuration from a file
+            JsonNode config = jsonUtility.load("/config.json");
+            boolean hostNetwork = config.get("host").asBoolean();
+
+            // Load the SSL configuration
+            JsonNode sslConfig = config.get("SSL");
+            String fullchain = sslConfig.get("fullchain").asText();
+            String privkey = sslConfig.get("privkey").asText();
+
+            // Create a server with SSL configuration
+            server = new Server("YourDomain.com", 8080, privkey, fullchain, hostNetwork);
+        } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InvalidKeySpecException | KeyManagementException e) {
+            System.err.println("Failed to create server with SSL configuration: " + e.getMessage());
+        }
+
+        return server;
     }
-  }
+
+    // Example of a http handler
+    private static class ExampleHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String response = "This is an example response";
+            exchange.sendResponseHeaders(200, response.getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+    }
 }
 ```

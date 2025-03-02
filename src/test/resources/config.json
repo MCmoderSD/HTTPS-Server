@@ -1,6 +1,7 @@
 {
   "hostname": "YourDomain.com",
   "port": 8080,
+  "host": true,
 
   "SSL": {
     "fullchain": "PATH_TO_FULLCHAIN",

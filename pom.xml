@@ -5,17 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.MCmoderSD</groupId>
-    <artifactId>server</artifactId>
-    <version>1.0.3</version>
+    <artifactId>HTTPS-Server</artifactId>
+    <version>1.1.0</version>
 
     <name>HTTPS-Server</name>
     <description>A simple HTTPS server implementation using Java's built-in classes</description>
 
     <distributionManagement>
         <repository>
-            <id>HTTPS-Server</id>
-            <name>GitHub MCmoderSD Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/MCmoderSD/HTTPS-Server</url>
+            <id>Nexus</id>
+            <name>Sonatype Nexus</name>
+            <url>https://mcmodersd.de/nexus/repository/maven-releases/</url>
         </repository>
     </distributionManagement>
 
@@ -27,8 +27,9 @@
 
     <repositories>
         <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
+            <id>Nexus</id>
+            <name>Sonatype Nexus</name>
+            <url>https://mcmodersd.de/nexus/repository/maven-releases/</url>
         </repository>
     </repositories>
 
@@ -36,9 +37,9 @@
 
         <!-- JsonUtility -->
         <dependency>
-            <groupId>com.github.MCmoderSD</groupId>
+            <groupId>de.MCmoderSD</groupId>
             <artifactId>JsonUtility</artifactId>
-            <version>1.1.1</version>
+            <version>1.2.0</version>
         </dependency>
 
     </dependencies>
