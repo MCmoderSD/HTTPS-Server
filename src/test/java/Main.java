@@ -71,7 +71,7 @@ public class Main {
             boolean hostNetwork = config.get("host").asBoolean();
 
             // Create a server with JKS configuration
-            server = new Server("localhost", 8000, jksConfig, hostNetwork);
+            server = new Server("localhost", 8000, null, jksConfig, hostNetwork);
         } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InterruptedException | KeyManagementException e) {
             System.err.println("Failed to create server with JKS configuration: " + e.getMessage());
         }
@@ -88,14 +88,16 @@ public class Main {
             // Load the configuration from a file
             JsonNode config = jsonUtility.load("/config.json");
             boolean hostNetwork = config.get("host").asBoolean();
+            boolean hasProxy = config.has("proxy");
 
             // Load the SSL configuration
             JsonNode sslConfig = config.get("SSL");
             String fullchain = sslConfig.get("fullchain").asText();
             String privkey = sslConfig.get("privkey").asText();
+            String proxy = hasProxy ? config.get("proxy").asText() : null;
 
             // Create a server with SSL configuration
-            server = new Server("YourDomain.com", 8080, privkey, fullchain, hostNetwork);
+            server = new Server("YourDomain.com", 8080, proxy, privkey, fullchain, hostNetwork);
         } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InvalidKeySpecException | KeyManagementException e) {
             System.err.println("Failed to create server with SSL configuration: " + e.getMessage());
         }

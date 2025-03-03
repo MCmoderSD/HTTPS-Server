@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsConfigurator;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -38,11 +39,6 @@ import java.security.spec.InvalidKeySpecException;
 
 import java.util.Base64;
 
-/**
- * The Server class provides methods to create and manage an HTTPS server using Java's built-in libraries.
- * It can be configured with a key store for SSL/TLS encryption, and it handles server creation,
- * start/stop functionality, and URL generation.
- */
 @SuppressWarnings("ALL")
 public class Server {
 
@@ -53,30 +49,17 @@ public class Server {
     // Constants
     protected final String hostname;
     protected final int port;
+    protected final String proxy;
 
     // Attributes
     protected final HttpsServer server;
 
-    /**
-     * Constructor to initialize the server with a custom JKS configuration for SSL.
-     *
-     * @param hostname the hostname for the server
-     * @param port the port number for the server
-     * @param jksConfig the JSON node containing the JKS configuration parameters
-     * @param hostNetwork whether to bind the server to the host network
-     * @throws IOException if an I/O error occurs
-     * @throws NoSuchAlgorithmException if the SSL/TLS algorithm is not available
-     * @throws KeyStoreException if there's an issue with the KeyStore
-     * @throws InterruptedException if the process is interrupted
-     * @throws UnrecoverableKeyException if the private key cannot be recovered
-     * @throws KeyManagementException if there's an error with key management
-     * @throws CertificateException if there's an issue with the certificate
-     */
-    public Server(String hostname, int port, JsonNode jksConfig, boolean hostNetwork) throws IOException, NoSuchAlgorithmException, KeyStoreException, InterruptedException, UnrecoverableKeyException, KeyManagementException, CertificateException {
+    public Server(String hostname, int port, @Nullable String proxy, JsonNode jksConfig, boolean hostNetwork) throws IOException, NoSuchAlgorithmException, KeyStoreException, InterruptedException, UnrecoverableKeyException, KeyManagementException, CertificateException {
 
         // Set hostname and port
         this.hostname = hostname.toLowerCase();
         this.port = port;
+        this.proxy = proxy;
 
         // Create HTTPS server
         server = HttpsServer.create(new InetSocketAddress(hostNetwork ? host : hostname, port), 0);
@@ -124,27 +107,12 @@ public class Server {
         });
     }
 
-    /**
-     * Constructor to initialize the server with a private key and certificate for SSL.
-     *
-     * @param hostname the hostname for the server
-     * @param port the port number for the server
-     * @param privKeyPath the path to the private key file
-     * @param fullChainPath the path to the certificate chain file
-     * @param hostNetwork whether to bind the server to the host network
-     * @throws IOException if an I/O error occurs
-     * @throws NoSuchAlgorithmException if the SSL/TLS algorithm is not available
-     * @throws KeyStoreException if there's an issue with the KeyStore
-     * @throws InvalidKeySpecException if the key specification is invalid
-     * @throws CertificateException if there's an issue with the certificate
-     * @throws UnrecoverableKeyException if the private key cannot be recovered
-     * @throws KeyManagementException if there's an error with key management
-     */
-    public Server(String hostname, int port, String privKeyPath, String fullChainPath, boolean hostNetwork) throws IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, CertificateException, UnrecoverableKeyException, KeyManagementException {
+    public Server(String hostname, int port, @Nullable String proxy, String privKeyPath, String fullChainPath, boolean hostNetwork) throws IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, CertificateException, UnrecoverableKeyException, KeyManagementException {
 
         // Set hostname and port
         this.hostname = hostname;
         this.port = port;
+        this.proxy = proxy;
 
         // Create HTTPS server
         server = HttpsServer.create(new InetSocketAddress(hostNetwork ? host : hostname, port), 0);
@@ -197,22 +165,6 @@ public class Server {
         });
     }
 
-    /**
-     * Generates a KeyStore based on provided parameters.
-     *
-     * @param FN the filename for the KeyStore
-     * @param PW the password for the KeyStore
-     * @param validity the validity period of the certificate
-     * @param CN the common name of the certificate
-     * @param OU the organizational unit of the certificate
-     * @param O the organization of the certificate
-     * @param L the locality of the certificate
-     * @param ST the state of the certificate
-     * @param C the country of the certificate
-     * @return an InputStream containing the generated KeyStore
-     * @throws IOException if an I/O error occurs
-     * @throws InterruptedException if the process is interrupted
-     */
     public static InputStream generateKeyStore(String FN, char[] PW, int validity, String CN, String OU, String O, String L, String ST, String C) throws IOException, InterruptedException {
 
         // Delete existing keystore file
@@ -253,62 +205,35 @@ public class Server {
         return inputStream;
     }
 
-    /**
-     * Starts the HTTPS server.
-     */
     public void start() {
         server.start();
     }
 
-    /**
-     * Stops the HTTPS server immediately.
-     */
     public void stop() {
         server.stop(0);
     }
 
-    /**
-     * Stops the HTTPS server after the specified delay.
-     *
-     * @param delay the delay (in seconds) before stopping the server
-     */
     public void stop(int delay) {
         server.stop(delay);
     }
 
-    /**
-     * Returns the HttpsServer instance for this server.
-     *
-     * @return the HttpsServer instance
-     */
     public HttpsServer getHttpsServer() {
         return server;
     }
 
-    /**
-     * Returns the URL of the server.
-     *
-     * @return the server URL
-     */
     public String getURL() {
-        return "https://" + hostname + ":" + port;
+        return proxy == null ? "https://" + "%s:%d".formatted(hostname, port) : proxy;
     }
 
-    /**
-     * Returns the hostname of the server.
-     *
-     * @return the hostname
-     */
     public String getHostname() {
         return hostname;
     }
 
-    /**
-     * Returns the port of the server.
-     *
-     * @return the port number
-     */
     public int getPort() {
         return port;
+    }
+
+    public String getProxy() {
+        return proxy;
     }
 }

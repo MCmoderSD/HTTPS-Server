@@ -23,7 +23,7 @@ Add the dependency to your `pom.xml` file:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -34,6 +34,7 @@ To configure the server, create a JSON file with the following structure:
   "hostname": "YourDomain.com",
   "port": 8080,
   "host": true,
+  "proxy": "ProxyDomain.com/proxy",
 
   "SSL": {
     "fullchain": "PATH_TO_FULLCHAIN",
@@ -58,6 +59,7 @@ To configure the server, create a JSON file with the following structure:
 1. **hostname**: The domain name or IP address where the server will be hosted.
 2. **port**: The port on which the server will listen.
 3. **host** If set to true, the server will listen on all available interfaces.
+4. **proxy**: The domain name or IP address of the proxy server (optional).
 3. **SSL** Configuration (**SSL** object):
 - **fullchain**: Path to the SSL/TLS certificate's full chain file.
 - **privkey**: Path to the private key associated with the certificate.
@@ -147,7 +149,7 @@ public class Main {
             boolean hostNetwork = config.get("host").asBoolean();
 
             // Create a server with JKS configuration
-            server = new Server("localhost", 8000, jksConfig, hostNetwork);
+            server = new Server("localhost", 8000, null, jksConfig, hostNetwork);
         } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InterruptedException | KeyManagementException e) {
             System.err.println("Failed to create server with JKS configuration: " + e.getMessage());
         }
@@ -164,14 +166,16 @@ public class Main {
             // Load the configuration from a file
             JsonNode config = jsonUtility.load("/config.json");
             boolean hostNetwork = config.get("host").asBoolean();
+            boolean hasProxy = config.has("proxy");
 
             // Load the SSL configuration
             JsonNode sslConfig = config.get("SSL");
             String fullchain = sslConfig.get("fullchain").asText();
             String privkey = sslConfig.get("privkey").asText();
+            String proxy = hasProxy ? config.get("proxy").asText() : null;
 
             // Create a server with SSL configuration
-            server = new Server("YourDomain.com", 8080, privkey, fullchain, hostNetwork);
+            server = new Server("YourDomain.com", 8080, proxy, privkey, fullchain, hostNetwork);
         } catch (IOException | URISyntaxException | UnrecoverableKeyException | CertificateException | NoSuchAlgorithmException | KeyStoreException | InvalidKeySpecException | KeyManagementException e) {
             System.err.println("Failed to create server with SSL configuration: " + e.getMessage());
         }
