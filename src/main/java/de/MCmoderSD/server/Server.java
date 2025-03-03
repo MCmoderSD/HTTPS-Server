@@ -222,7 +222,7 @@ public class Server {
     }
 
     public String getURL() {
-        return proxy == null ? "https://" + "%s:%d".formatted(hostname, port) : proxy;
+        return "https://" + proxy == null ? "%s:%d".formatted(hostname, port) : proxy;
     }
 
     public String getHostname() {
