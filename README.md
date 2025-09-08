@@ -23,7 +23,7 @@ Add the dependency to your `pom.xml` file:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 
@@ -93,11 +93,13 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
+@SuppressWarnings("ALL")
 public class Main {
 
-    private static final JsonUtility jsonUtility = new JsonUtility();
+    // Scanner for user input
     private static final Scanner scanner = new Scanner(System.in);
 
+    // Main method
     public static void main(String[] args) {
 
         // Create a server with JKS configuration
@@ -137,6 +139,7 @@ public class Main {
         sslServer.stop();
     }
 
+    // Method to create a server with JKS configuration
     private static Server createJKSServer() {
 
         Server server = null;
@@ -144,7 +147,7 @@ public class Main {
         try {
 
             // Load the configuration from a file
-            JsonNode config = jsonUtility.load("/config.json");
+            JsonNode config = JsonUtility.getInstance().load("/config.json");
             JsonNode jksConfig = config.get("JKS");
             boolean hostNetwork = config.get("host").asBoolean();
 
@@ -157,6 +160,7 @@ public class Main {
         return server;
     }
 
+    // Method to create a server with SSL configuration
     private static Server createSSLServer() {
 
         Server server = null;
@@ -164,7 +168,7 @@ public class Main {
         try {
 
             // Load the configuration from a file
-            JsonNode config = jsonUtility.load("/config.json");
+            JsonNode config = JsonUtility.getInstance().load("/config.json");
             boolean hostNetwork = config.get("host").asBoolean();
             boolean hasProxy = config.has("proxy");
 

@@ -6,7 +6,7 @@
 
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 
     <name>HTTPS-Server</name>
     <description>A simple HTTPS server implementation using Java's built-in classes</description>
@@ -39,14 +39,14 @@
         <dependency>
             <groupId>de.MCmoderSD</groupId>
             <artifactId>JsonUtility</artifactId>
-            <version>1.2.0</version>
+            <version>1.3.2</version>
         </dependency>
 
         <!-- Annotations -->
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>26.0.2</version>
+            <version>26.0.2-1</version>
             <scope>compile</scope>
         </dependency>
 
