@@ -1,23 +1,25 @@
 {
-  "hostname": "YourDomain.com",
-  "port": 8080,
-  "host": true,
-  "proxy": "ProxyDomain.com/proxy",
+  "host":"localhost",
+  "httpPort":80,
+  "httpsPort":443,
+  "baseUrl":"/",
 
-  "SSL": {
-    "fullchain": "PATH_TO_FULLCHAIN",
-    "privkey": "PATH_TO_PRIVKEY"
-  },
+  "certificate":{
+    "keyPassword":"Your Key Password",
+    "expirationDays":366,
 
-  "JKS": {
-    "file": "keystore.jks",
-    "password": "SECURE_PASSWORD",
-    "validity": 365,
-    "CN": "Your Name",
-    "OU": "Your Organization Unit",
-    "O": "Your Organization",
-    "L": "Your City",
-    "ST": "Your State",
-    "C": "Your Country"
+    "subject":{
+      "commonName":"localhost",
+      "organization":"Your Organization",
+      "organizationalUnit":"Your Organizational Unit",
+      "locality":"Your City",
+      "state":"Your State",
+      "country":"DE"
+    },
+
+    "subjectAltNames":{
+      "dns":["localhost"],
+      "ip":["127.0.0.1","::1"]
+    }
   }
 }
