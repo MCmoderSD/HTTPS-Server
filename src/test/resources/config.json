@@ -4,22 +4,34 @@
   "httpsPort":443,
   "baseUrl":"/",
 
-  "certificate":{
-    "keyPassword":"Your Key Password",
-    "expirationDays":366,
+  "certificate": {
 
-    "subject":{
-      "commonName":"localhost",
-      "organization":"Your Organization",
-      "organizationalUnit":"Your Organizational Unit",
-      "locality":"Your City",
-      "state":"Your State",
-      "country":"DE"
+    "provided": false,
+    "paths": {
+      "privateKey": "path/to/your/private.pem",
+      "certificate": "path/to/your/certificate.pem"
     },
 
-    "subjectAltNames":{
-      "dns":["localhost"],
-      "ip":["127.0.0.1","::1"]
+    "selfSigned": {
+      "keyPassword": "Your Key Password",
+      "expirationDays": 366,
+      "subject": {
+        "commonName": "localhost",
+        "organization": "Your Organization",
+        "organizationalUnit": "Your Organizational Unit",
+        "locality": "Your City",
+        "state": "Your State",
+        "country": "DE"
+      },
+      "subjectAltNames": {
+        "dns": [
+          "localhost"
+        ],
+        "ip": [
+          "127.0.0.1",
+          "::1"
+        ]
+      }
     }
   }
 }
