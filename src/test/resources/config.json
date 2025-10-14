@@ -1,7 +1,7 @@
 {
   "host":"localhost",
-  "httpPort":80,
-  "httpsPort":443,
+  "httpPort":8000,
+  "httpsPort":8080,
   "baseUrl":"/",
 
   "certificate": {
@@ -10,6 +10,18 @@
     "paths": {
       "privateKey": "path/to/your/private.pem",
       "certificate": "path/to/your/certificate.pem"
+    },
+
+    "acmeSigned": {
+      "email": "Your@Email.com",
+      "cloudflare": {
+        "zoneId": "Your Zone ID",
+        "apiKey": "Your API Key"
+      },
+      "domains": [
+        "example.com",
+        "www.example.com"
+      ]
     },
 
     "selfSigned": {
