@@ -61,17 +61,15 @@ public class SelfSignedCert {
         this.BC_PROVIDER = BC_PROVIDER;
         this.SIGNATURE_ALGORITHM = SIGNATURE_ALGORITHM;
 
-        // Check if config is null
-        if (config == null) throw new IllegalArgumentException("Configuration cannot be null");
-        if (config.isEmpty()) throw new IllegalArgumentException("Configuration cannot be empty");
+        // Check Configuration
+        if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
 
         // Load Expiration Days
-        if (!config.has("expirationDays") || config.get("expirationDays") == null) throw new IllegalArgumentException("Expiration days is required in the configuration");
+        if (!config.has("expirationDays") || config.get("expirationDays").isNull() || config.get("expirationDays").isEmpty()) throw new IllegalArgumentException("Expiration days is required in the configuration");
         var expirationMillis = config.get("expirationDays").asLong() * 24 * 60 * 60 * 1000; // Convert days to milliseconds
         if (expirationMillis <= 0 || expirationMillis > 366L * 24L * 60L * 60L * 1000L) throw new IllegalArgumentException("Expiration days must be between 1 and 366");
 
         // Load Subject Details
-        // Load subject details from JSON config
         JsonNode subject = config.get("subject");
         CN = subject.has("commonName") ?            subject.get("commonName").asText()          : null;
         O  = subject.has("organization") ?          subject.get("organization").asText()        : null;
@@ -96,6 +94,9 @@ public class SelfSignedCert {
 
     // Parse SANs from JSON
     private GeneralName[] parseSANs(JsonNode san) {
+
+        // Check SAN node
+        if (san == null || san.isNull() || san.isEmpty()) throw new IllegalArgumentException("Subject Alternative Names (SAN) cannot be null or empty");
 
         // Split the SAN into DNS and IP entries
         ArrayList<GeneralName> sanList = new ArrayList<>();
@@ -123,6 +124,10 @@ public class SelfSignedCert {
 
     // Build the X.509 Certificate
     private JcaX509v3CertificateBuilder buildCert(PublicKey publicKey, long expirationMillis) {
+
+        // Check Inputs
+        if (publicKey == null) throw new IllegalArgumentException("Public key cannot be null");
+        if (expirationMillis <= 0) throw new IllegalArgumentException("Expiration milliseconds must be positive");
 
         // Build the subject
         X500NameBuilder subjectBuilder = new X500NameBuilder(INSTANCE);
@@ -175,6 +180,10 @@ public class SelfSignedCert {
     // Sign the certificate with the private key
     private X509Certificate signCertificate(JcaX509v3CertificateBuilder certBuilder, KeyPair privateKey) {
         try {
+
+            // Check inputs
+            if (certBuilder == null) throw new IllegalArgumentException("Certificate builder cannot be null");
+            if (privateKey == null || privateKey.getPrivate() == null || privateKey.getPublic() == null) throw new IllegalArgumentException("Private key cannot be null");
 
             // Create a Content Signer
             var signer = new JcaContentSignerBuilder(SIGNATURE_ALGORITHM)
