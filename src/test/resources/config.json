@@ -5,18 +5,22 @@
   "baseUrl":"/",
 
   "certificate": {
+    "keyPassword": "Your Key Password",
 
     "provided": false,
+    "createIfMissing": true,
     "paths": {
       "privateKey": "path/to/your/private.pem",
       "certificate": "path/to/your/certificate.pem"
     },
 
     "acmeSigned": {
+      "debug": true,
       "email": "Your@Email.com",
+      "accountKey": "account.key",
       "cloudflare": {
         "zoneId": "Your Zone ID",
-        "apiKey": "Your API Key"
+        "apiToken": "Your API Key"
       },
       "domains": [
         "example.com",
@@ -25,7 +29,6 @@
     },
 
     "selfSigned": {
-      "keyPassword": "Your Key Password",
       "expirationDays": 366,
       "subject": {
         "commonName": "localhost",

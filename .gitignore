@@ -12,3 +12,9 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+### Others ###
+.env
+account.key
+fullchain.pem
+privkey.pem
