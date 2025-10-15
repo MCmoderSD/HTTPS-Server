@@ -3,16 +3,20 @@ package de.MCmoderSD.server.cert;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.shredzone.acme4j.util.KeyPairUtils;
 
 import javax.net.ssl.*;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HexFormat;
 
-@SuppressWarnings("ClassCanBeRecord")
+import static de.MCmoderSD.server.enums.KeySize.RSA_4096;
+
 public class CertManager {
 
     // Constants
@@ -30,6 +34,9 @@ public class CertManager {
     }
 
     // SSLContext
+    private final char[] keyPassword;
+    private final KeyPair privateKey;
+    private final X509Certificate certificate;
     private final SSLContext sslContext;
 
     // Constructor
@@ -37,57 +44,151 @@ public class CertManager {
 
         // Check Configuration
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
+        if (!config.has("keyPassword") || config.get("keyPassword").isNull()) throw new IllegalArgumentException("Key password is required in the configuration");
+
+        // Load Key Password
+        String password = config.get("keyPassword").asText();
+        if (password.isBlank()) throw new IllegalArgumentException("Key password cannot be empty");
+        keyPassword = password.toCharArray();
+
+        // Generate Private Key
+        privateKey = KeyPairUtils.createKeyPair(RSA_4096.getSize());
 
         // Initialize SSLContext based on Certificate Type
-        sslContext = switch (CertificateType.fromConfig(config)) {
+        certificate = switch (CertificateType.fromConfig(config)) {
             case PROVIDED -> useProvidedCertificate(config);
-            case ACME_SIGNED -> useAcmeSigned(config.get("acmeSigned"));
-            case SELF_SIGNED -> useSelfSigned(config.get("selfSigned"));
+            case ACME_SIGNED -> useAcmeSigned(privateKey, config.get("acmeSigned"));
+            case SELF_SIGNED -> useSelfSigned(privateKey, config.get("selfSigned"));
         };
+
+        // Initialize SSLContext
+        sslContext = initSSLContext(
+                initKeyManager(privateKey.getPrivate(), certificate, keyPassword),
+                initTrustManager(certificate)
+        );
     }
 
-    private SSLContext useProvidedCertificate(JsonNode config) {
-        return null; // ToDo: Implement loading provided certificate
+    private X509Certificate useProvidedCertificate(JsonNode config) {
+
+        // Check Provided Certificate Config
+        if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Provided certificate configuration cannot be null or empty");
+        if (!config.has("paths") || config.get("paths").isNull() || config.get("paths").isEmpty()) throw new IllegalArgumentException("Certificate paths are required");
+
+        // Load Paths
+        JsonNode paths = config.get("paths");
+        if (!paths.has("privateKey") || paths.get("privateKey").isNull()) throw new IllegalArgumentException("Private key path is required");
+        if (!paths.has("certificate") || paths.get("certificate").isNull()) throw new IllegalArgumentException("Certificate path is required");
+
+        // Load Paths
+        String privateKeyPath = paths.get("privateKey").asText();
+        String certificatePath = paths.get("certificate").asText();
+
+        // Check Paths
+        if (privateKeyPath.isBlank()) throw new IllegalArgumentException("Private key path cannot be empty");
+        if (certificatePath.isBlank()) throw new IllegalArgumentException("Certificate path cannot be empty");
+
+        // Initialize Private Key and Certificate Files
+        File privateKeyFile = new File(privateKeyPath);
+        File certificateFile = new File(certificatePath);
+
+        // Check if files exist and are readable
+        if (!(privateKeyFile.exists() && privateKeyFile.isFile() && privateKeyFile.canRead())) throw new IllegalArgumentException("Private key file does not exist or is not readable: " + privateKeyFile);
+        if (!(certificateFile.exists() && certificateFile.isFile() && certificateFile.canRead())) throw new IllegalArgumentException("Certificate file does not exist or is not readable: " + certificateFile);
+
+        // Load Private Key and Certificate
+        KeyPair privateKey;
+        X509Certificate certificate;
+        // ToDo: Support for certificate chain
+        return null;
     }
 
-    private SSLContext useAcmeSigned(JsonNode config) {
+    private X509Certificate useAcmeSigned(KeyPair privateKey, JsonNode config) {
 
         // Check ACME Config
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
+        if (!config.has("email") || config.get("email").isNull()) throw new IllegalArgumentException("Certificate email is required");
+        if (!config.has("accountKey") || config.get("accountKey").isNull()) throw new IllegalArgumentException("ACME account key is required");
+        if (!config.has("cloudflare") || config.get("cloudflare").isNull() || config.get("cloudflare").isEmpty()) throw new IllegalArgumentException("Cloudflare configuration is required");
+        if (!config.has("domains") || config.get("domains").isNull() || config.get("domains").isEmpty() || !config.get("domains").isArray()) throw new IllegalArgumentException("At least one domain is required");
 
+        // Load Cloudflare Config
+        JsonNode cloudflare = config.get("cloudflare");
+        if (!cloudflare.has("zoneId") || cloudflare.get("zoneId").isNull()) throw new IllegalArgumentException("Cloudflare zone ID is required");
+        if (!cloudflare.has("apiToken") || cloudflare.get("apiToken").isNull()) throw new IllegalArgumentException("Cloudflare API token is required");
 
+        // Load Email
+        String email = config.get("email").asText();
+        if (email.isBlank() || !email.contains("@") || email.contains(" ") || email.startsWith("@") || email.endsWith("@")) throw new IllegalArgumentException("Invalid email address");
 
-        return null; // ToDo: Implement ACME signed certificate
-    }
+        // Load Account Key
+        String accountKeyPath = config.get("accountKey").asText();
+        if (accountKeyPath.isBlank()) throw new IllegalArgumentException("ACME account key cannot be empty");
+        File accountKeyFile = new File(accountKeyPath);
+        boolean newAccount = !accountKeyFile.exists() || !accountKeyFile.isFile() || !accountKeyFile.canRead();
 
-    private SSLContext useSelfSigned(JsonNode config) {
+        // Load Zone ID and API Token
+        String zoneId = cloudflare.get("zoneId").asText();
+        String apiToken = cloudflare.get("apiToken").asText();
 
-        // Check Self-Signed Config
-        if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Self-signed certificate configuration cannot be null or empty");
+        // Check Zone ID and API Token
+        if (zoneId.isBlank()) throw new IllegalArgumentException("Cloudflare zone ID cannot be empty");
+        if (apiToken.isBlank()) throw new IllegalArgumentException("Cloudflare API token cannot be empty");
 
-        // Initialize Self-Signed Certificate
-        SelfSignedCert selfSignedCert = new SelfSignedCert(config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
+        // Load Domains
+        JsonNode domainsList = config.get("domains");
+        String[] domains = new String[domainsList.size()];
+        for (var i = 0; i < domainsList.size(); i++) domains[i] = domainsList.get(i).asText();
 
-        // Load Key Password
-        if (!config.has("keyPassword") || config.get("keyPassword") == null) throw new IllegalArgumentException("Key password is required in the configuration");
-        String password = config.get("keyPassword").asText();
-        if (password.isBlank()) throw new IllegalArgumentException("Key password cannot be empty");
-        char[] keyPassword = password.toCharArray();
+        // Check Domains
+        if (domains.length == 0) throw new IllegalArgumentException("At least one domain must be specified");
+        for (var domain : domains) if (domain.isBlank()) throw new IllegalArgumentException("Domain names cannot be empty");
 
-        // Obtain Private Key and Certificate
-        KeyPair privateKey = selfSignedCert.getPrivateKey();
-        X509Certificate certificate = selfSignedCert.getCertificate();
+        // Check for debug mode
+        boolean debug = config.has("debug") && !config.get("debug").isNull() && config.get("debug").asBoolean();
 
-        // CHeck Private Key and Certificate
+        // Load or Create Account Key Pair
+        KeyPair accountKey;
+        if (newAccount) accountKey = KeyPairUtils.createKeyPair(RSA_4096.getSize());
+        else {
+            try {
+                accountKey = KeyPairUtils.readKeyPair(Files.newBufferedReader(accountKeyFile.toPath()));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read ACME account key from file: " + accountKeyFile, e);
+            }
+        }
+
+        // Initialize ACME
+        ACME acme = new ACME(email, accountKey, zoneId, apiToken, debug);
+
+        // Order Certificate
+        X509Certificate certificate = acme.orderCertificate(privateKey, domains).getCertificate();
+
+        // Check Private Key and Certificate
         if (privateKey == null || privateKey.getPrivate() == null || privateKey.getPublic() == null) throw new IllegalArgumentException("Private key cannot be null");
         if (certificate == null) throw new IllegalArgumentException("Certificate cannot be null");
 
-        // Initialize SSLContext
-        return initSSLContext(initKeyManager(privateKey.getPrivate(), certificate, keyPassword), initTrustManager(certificate));
+        // Save Account Key if new
+        if (newAccount) ACME.writeKeyPair(accountKey, accountKeyFile);
+
+        // Return Certificate
+        return certificate;
+    }
+
+    private X509Certificate useSelfSigned(KeyPair privateKey, JsonNode config) {
+
+        // Check Private Key and Config
+        if (privateKey == null || privateKey.getPrivate() == null || privateKey.getPublic() == null) throw new IllegalArgumentException("Private key cannot be null");
+        if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Self-signed certificate configuration cannot be null or empty");
+
+        // Initialize Self-Signed Certificate
+        SelfSignedCert selfSignedCert = new SelfSignedCert(privateKey, config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
+
+        // Obtain Private Key and Certificate
+        return selfSignedCert.getCertificate();
     }
 
     // Initialize KeyManager
-    private static KeyManager[] initKeyManager(PrivateKey privateKey, X509Certificate certificate, char[] keyPassword) {
+    public static KeyManager[] initKeyManager(PrivateKey privateKey, X509Certificate certificate, char[] keyPassword) {
         try {
 
             // Check inputs
@@ -116,7 +217,7 @@ public class CertManager {
     }
 
     // Initialize TrustManager
-    private static TrustManager[] initTrustManager(X509Certificate certificate) {
+    public static TrustManager[] initTrustManager(X509Certificate certificate) {
         try {
 
             // Check input
@@ -141,7 +242,7 @@ public class CertManager {
     }
 
     // Initialize SSLContext
-    private static SSLContext initSSLContext(KeyManager[] keyManager, TrustManager[] trustManager) {
+    public static SSLContext initSSLContext(KeyManager[] keyManager, TrustManager[] trustManager) {
         try {
 
             // Check inputs

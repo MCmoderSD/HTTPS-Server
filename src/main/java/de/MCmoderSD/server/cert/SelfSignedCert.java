@@ -45,11 +45,10 @@ public class SelfSignedCert {
     private final GeneralName[] SANs;   // Subject Alternative Names
 
     // Attributes
-    private final KeyPair privateKey;
     private final X509Certificate certificate;
 
     // Constructor
-    public SelfSignedCert(JsonNode config, SecureRandom RANDOM, String BC_PROVIDER, String SIGNATURE_ALGORITHM) {
+    public SelfSignedCert(KeyPair privateKey, JsonNode config, SecureRandom RANDOM, String BC_PROVIDER, String SIGNATURE_ALGORITHM) {
 
         // Check Constants
         if (RANDOM == null) throw new IllegalArgumentException("SecureRandom cannot be null");
@@ -62,6 +61,7 @@ public class SelfSignedCert {
         this.SIGNATURE_ALGORITHM = SIGNATURE_ALGORITHM;
 
         // Check Configuration
+        if (privateKey == null) throw new IllegalArgumentException("privateKey cannot be null");
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
 
         // Load Expiration Days
@@ -87,9 +87,7 @@ public class SelfSignedCert {
         else SANs = parseSANs(config.get("subjectAltNames"));
 
         // Build and sign the certificate
-        privateKey = KeyPairUtils.createKeyPair(RSA_4096.getSize());            // Generate KeyPair
-        var certBuilder = buildCert(privateKey.getPublic(), expirationMillis);  // Build the certificate
-        certificate = signCertificate(certBuilder, privateKey);                 // Sign the certificate
+        certificate = signCertificate(buildCert(privateKey.getPublic(), expirationMillis), privateKey);
     }
 
     // Parse SANs from JSON
@@ -205,11 +203,6 @@ public class SelfSignedCert {
         } catch (CertificateException | NoSuchAlgorithmException | SignatureException | OperatorCreationException | InvalidKeyException | NoSuchProviderException e) {
             throw new RuntimeException("Error signing certificate", e);
         }
-    }
-
-    // Getters
-    public KeyPair getPrivateKey() {
-        return privateKey;
     }
 
     public X509Certificate getCertificate() {
