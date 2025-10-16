@@ -1,6 +1,8 @@
 package de.MCmoderSD.server.cert;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import de.MCmoderSD.server.enums.KeySize;
+import org.bouncycastle.asn1.crmf.CertTemplateBuilder;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.shredzone.acme4j.util.KeyPairUtils;
@@ -51,55 +53,78 @@ public class CertManager {
         if (password.isBlank()) throw new IllegalArgumentException("Key password cannot be empty");
         keyPassword = password.toCharArray();
 
-        // Generate Private Key
-        privateKey = KeyPairUtils.createKeyPair(RSA_4096.getSize());
+        // Declare Paths variables
+        File privateKeyFile;
+        File certificateFile;
+        boolean privateKeyExists = false;
+        boolean certificateExists = false;
 
-        // Initialize SSLContext based on Certificate Type
-        certificate = switch (CertificateType.fromConfig(config)) {
-            case PROVIDED -> useProvidedCertificate(config);
-            case ACME_SIGNED -> useAcmeSigned(privateKey, config.get("acmeSigned"));
-            case SELF_SIGNED -> useSelfSigned(privateKey, config.get("selfSigned"));
-        };
+
+        // Check if Paths were provided for a provided certificate
+        boolean hasPaths = config.has("paths") && !config.get("paths").isNull() && !config.get("paths").isEmpty();
+        boolean createIfMissing = hasPaths && config.has("createIfMissing") && !config.get("createIfMissing").isNull() && config.get("createIfMissing").asBoolean();
+
+        if (hasPaths && !createIfMissing) // ToDo: Load existing certificate from paths
+            throw new UnsupportedOperationException("Loading existing provided certificates is not yet implemented");
+        else if (hasPaths) {
+
+            // Check if files exist
+            JsonNode paths = config.get("paths");
+            if (!paths.has("privateKey") || paths.get("privateKey").isNull()) throw new IllegalArgumentException("Private key path is required");
+            if (!paths.has("certificate") || paths.get("certificate").isNull()) throw new IllegalArgumentException("Certificate path is required");
+
+            // Load Paths
+            String privateKeyPath = paths.get("privateKey").asText();
+            String certificatePath = paths.get("certificate").asText();
+
+            // Check Paths
+            if (privateKeyPath.isBlank()) throw new IllegalArgumentException("Private key path cannot be empty");
+            if (certificatePath.isBlank()) throw new IllegalArgumentException("Certificate path cannot be empty");
+
+            // Initialize Private Key and Certificate Files
+            privateKeyFile = new File(privateKeyPath);
+            certificateFile = new File(certificatePath);
+
+            // Check if files exist and are readable
+            privateKeyExists = privateKeyFile.exists() && privateKeyFile.isFile() && privateKeyFile.canRead();
+            certificateExists = certificateFile.exists() && certificateFile.isFile() && certificateFile.canRead();
+        }
+
+        // Load Private Key and Certificate (if both files exist)
+        if (hasPaths && privateKeyExists && certificateExists) // ToDo: Load existing certificate from paths
+            throw new UnsupportedOperationException("Loading existing provided certificates is not yet implemented");
+
+        // Load Key Size if provided
+        KeySize keySize;
+        if (!config.has("keySize") || config.get("keySize").isNull() || KeySize.isValidSize(config.get("keySize").asInt())) keySize = KeySize.getKeySize(config.get("keySize").asInt());
+        else keySize = RSA_4096;
+
+        // Load or Create Private Key
+        if (hasPaths && privateKeyExists) // ToDo: Load existing private key from
+            throw new UnsupportedOperationException("Loading existing private keys is not yet implemented");
+        else privateKey = KeyPairUtils.createKeyPair(keySize.getSize());
+
+        // Save Private Key if path provided and file does not exist
+        if (hasPaths) // ToDo: Save private key to file
+            System.out.println("Saving private keys is not yet implemented");
+
+        // Initialize Certificate (using ACME or Self-Signed)
+        if (config.has("acmeSigned") && !config.get("acmeSigned").isNull() && !config.get("acmeSigned").isEmpty()) certificate = useAcmeSigned(privateKey, config.get("acmeSigned"));
+        else if (config.has("selfSigned") && !config.get("selfSigned").isNull() && !config.get("selfSigned").isEmpty()) certificate = useSelfSigned(privateKey, config.get("selfSigned"));
+        else throw new IllegalArgumentException("Either 'acmeSigned' or 'selfSigned' configuration must be provided");
+
+        // Save Certificate if path provided and file does not exist
+        if (hasPaths && !certificateExists) // ToDo: Save certificate to file
+            throw new UnsupportedOperationException("Saving certificates is not yet implemented");
+
+        // Check Private Key and Certificate
+        // ToDo check validity
 
         // Initialize SSLContext
         sslContext = initSSLContext(
                 initKeyManager(privateKey.getPrivate(), certificate, keyPassword),
                 initTrustManager(certificate)
         );
-    }
-
-    private X509Certificate useProvidedCertificate(JsonNode config) {
-
-        // Check Provided Certificate Config
-        if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Provided certificate configuration cannot be null or empty");
-        if (!config.has("paths") || config.get("paths").isNull() || config.get("paths").isEmpty()) throw new IllegalArgumentException("Certificate paths are required");
-
-        // Load Paths
-        JsonNode paths = config.get("paths");
-        if (!paths.has("privateKey") || paths.get("privateKey").isNull()) throw new IllegalArgumentException("Private key path is required");
-        if (!paths.has("certificate") || paths.get("certificate").isNull()) throw new IllegalArgumentException("Certificate path is required");
-
-        // Load Paths
-        String privateKeyPath = paths.get("privateKey").asText();
-        String certificatePath = paths.get("certificate").asText();
-
-        // Check Paths
-        if (privateKeyPath.isBlank()) throw new IllegalArgumentException("Private key path cannot be empty");
-        if (certificatePath.isBlank()) throw new IllegalArgumentException("Certificate path cannot be empty");
-
-        // Initialize Private Key and Certificate Files
-        File privateKeyFile = new File(privateKeyPath);
-        File certificateFile = new File(certificatePath);
-
-        // Check if files exist and are readable
-        if (!(privateKeyFile.exists() && privateKeyFile.isFile() && privateKeyFile.canRead())) throw new IllegalArgumentException("Private key file does not exist or is not readable: " + privateKeyFile);
-        if (!(certificateFile.exists() && certificateFile.isFile() && certificateFile.canRead())) throw new IllegalArgumentException("Certificate file does not exist or is not readable: " + certificateFile);
-
-        // Load Private Key and Certificate
-        KeyPair privateKey;
-        X509Certificate certificate;
-        // ToDo: Support for certificate chain
-        return null;
     }
 
     private X509Certificate useAcmeSigned(KeyPair privateKey, JsonNode config) {
@@ -264,28 +289,5 @@ public class CertManager {
     // Getter for SSLContext
     public SSLContext getSSLContext() {
         return sslContext;
-    }
-
-    private enum CertificateType {
-
-        // Types
-        PROVIDED,
-        ACME_SIGNED,
-        SELF_SIGNED;
-
-        // Determine Certificate Type from Configuration
-        public static CertificateType fromConfig(JsonNode config) {
-
-            // Check Configuration
-            if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
-
-            // Determine Certificate Type
-            if (config.has("paths") && config.has("provided") && config.get("provided").asBoolean()) return PROVIDED;
-            if (config.has("acmeSigned")) return ACME_SIGNED;
-            if (config.has("selfSigned")) return SELF_SIGNED;
-
-            // No valid certificate type found
-            throw new IllegalArgumentException("No valid certificate configuration found");
-        }
     }
 }

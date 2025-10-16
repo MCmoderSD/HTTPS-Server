@@ -6,8 +6,8 @@
 
   "certificate": {
     "keyPassword": "Your Key Password",
+    "keySize": 2048,
 
-    "provided": false,
     "createIfMissing": true,
     "paths": {
       "privateKey": "path/to/your/private.pem",
