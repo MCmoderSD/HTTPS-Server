@@ -2,6 +2,7 @@ package de.MCmoderSD.server.cert;
 
 import de.MCmoderSD.cloudflare.core.CloudflareClient;
 import de.MCmoderSD.cloudflare.objects.DnsRecord;
+import de.MCmoderSD.server.enums.KeySize;
 import org.shredzone.acme4j.*;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
@@ -20,6 +21,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 
 import static de.MCmoderSD.cloudflare.enums.RecordType.TXT;
+import static de.MCmoderSD.server.enums.KeySize.RSA_4096;
 import static org.shredzone.acme4j.Status.*;
 import static org.shredzone.acme4j.challenge.Dns01Challenge.TYPE;
 
@@ -408,7 +410,7 @@ public class ACME {
 
     // Static Utility Methods
     public static KeyPair createKeyPair() {
-        return createKeyPair(KeySize.RSA_4096);
+        return createKeyPair(RSA_4096);
     }
 
     public static KeyPair createKeyPair(KeySize keySize) {
@@ -445,6 +447,16 @@ public class ACME {
 
         // Return KeyPair
         return keyPair;
+    }
+
+    public static Certificate loadCertificate(File certificateFile) {
+
+        // Check Parameters
+        if (certificateFile == null) throw new IllegalArgumentException("Certificate file must not be null");
+        if (!certificateFile.exists() || !certificateFile.isFile() || !certificateFile.canRead()) throw new IllegalArgumentException("Certificate file does not exist or is not readable");
+
+        // ToDo Implement Certificate Loading
+        throw new UnsupportedOperationException("Certificate loading not implemented yet");
     }
 
     public static File writeKeyPair(KeyPair keyPair, File keyPairFile) {
@@ -550,27 +562,5 @@ public class ACME {
 
     public Account getAccount() {
         return account;
-    }
-
-    // Key Size Enum
-    public enum KeySize {
-
-        // RSA Key Sizes
-        RSA_2048(2048),
-        RSA_3072(3072),
-        RSA_4096(4096);
-
-        // Attributes
-        private final int size;
-
-        // Constructor
-        KeySize(int size) {
-            this.size = size;
-        }
-
-        // Getter
-        public int getSize() {
-            return size;
-        }
     }
 }
