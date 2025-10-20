@@ -1,5 +1,6 @@
 package de.MCmoderSD.server.enums;
 
+@SuppressWarnings("unused")
 public enum KeySize {
 
     // RSA Key Sizes
@@ -12,12 +13,12 @@ public enum KeySize {
 
     // Constructor
     KeySize(int size) {
-            this.size = size;
-        }
+        this.size = size;
+    }
 
     // Getter
     public int getSize() {
-            return size;
+        return size;
     }
 
     // Static Methods
@@ -26,7 +27,6 @@ public enum KeySize {
     }
 
     public static KeySize getKeySize(int size) {
-        if (!isValidSize(size)) throw new IllegalArgumentException("Invalid key size: " + size);
         return switch (size) {
             case 2048 -> RSA_2048;
             case 3072 -> RSA_3072;

@@ -2,30 +2,31 @@ package de.MCmoderSD.server.cert;
 
 import de.MCmoderSD.cloudflare.core.CloudflareClient;
 import de.MCmoderSD.cloudflare.objects.DnsRecord;
-import de.MCmoderSD.server.enums.KeySize;
-import org.shredzone.acme4j.*;
+
+import org.shredzone.acme4j.Account;
+import org.shredzone.acme4j.AccountBuilder;
+import org.shredzone.acme4j.Certificate;
+import org.shredzone.acme4j.Order;
+import org.shredzone.acme4j.Session;
+import org.shredzone.acme4j.Status;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
 import org.shredzone.acme4j.exception.AcmeException;
 import org.shredzone.acme4j.util.CSRBuilder;
-import org.shredzone.acme4j.util.KeyPairUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.security.KeyPair;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 
-import static de.MCmoderSD.cloudflare.enums.RecordType.TXT;
-import static de.MCmoderSD.server.enums.KeySize.RSA_4096;
 import static org.shredzone.acme4j.Status.*;
+import static de.MCmoderSD.cloudflare.enums.RecordType.TXT;
 import static org.shredzone.acme4j.challenge.Dns01Challenge.TYPE;
 
-@SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted", "UnusedReturnValue", "DuplicateExpressions"})
+@SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted", "DuplicateExpressions"})
 public class ACME {
 
     // Constants
@@ -107,11 +108,12 @@ public class ACME {
     }
 
     // Validate Email Address
-    private static boolean validateEmail(String email) {
+    public static boolean validateEmail(String email) {
 
         // Check Parameters
         if (email == null || email.isBlank()) return false;
         if (!email.contains(AT) || email.contains(SPACE)) return false;
+        if (email.startsWith(AT) || email.endsWith(AT)) return false;
 
         // Basic Email Validation
         return email.chars().filter(c -> c == AT.toCharArray()[0]).count() == 1;
@@ -127,7 +129,7 @@ public class ACME {
         domain = domain.toLowerCase();
         if (domain.startsWith(WILDCARD_PREFIX)) return normalizeDomain(domain.substring(2));
         if (domain.startsWith(CHALLENGE_PREFIX)) return normalizeDomain(domain.substring(16));
-        return domain;
+        return domain; // Return normalized domain
     }
 
     // Create ACME Order
@@ -168,7 +170,6 @@ public class ACME {
         HashSet<String> recordIds = new HashSet<>(cloudflareClient.getRecordMap().keySet());
         for (var record : records) if (recordIds.contains(record.getId())) throw new RuntimeException("Failed to delete existing ACME TXT record for domain: " + domain);
         if (debug) System.out.println("ACME Deleted existing TXT records for domain: " + domain);
-
 
         // Create TXT record
         DnsRecord record = cloudflareClient.createRecord(DnsRecord.builder(TXT)
@@ -280,7 +281,7 @@ public class ACME {
             // Create ACME TXT Record and wait for propagation
             DnsRecord acmeRecord = createAcmeRecord(domain, digest);
             var wait = new BigDecimal(TTL).multiply(BigDecimal.valueOf(5d / 4d)).movePointRight(3).toBigInteger().longValue();
-            if (debug) System.out.println("ACME Waiting " + wait / 1000 + "ms for DNS propagation...");
+            if (debug) System.out.println("ACME Waiting " + wait / 1000 + "s for DNS propagation...");
             sleep(wait);
 
 
@@ -406,141 +407,6 @@ public class ACME {
 
         // Return Certificate
         return certificate;
-    }
-
-    // Static Utility Methods
-    public static KeyPair createKeyPair() {
-        return createKeyPair(RSA_4096);
-    }
-
-    public static KeyPair createKeyPair(KeySize keySize) {
-
-        // Check Parameters
-        if (keySize == null) throw new IllegalArgumentException("Key size must not be null");
-
-        // Create KeyPair
-        KeyPair keyPair = KeyPairUtils.createKeyPair(keySize.getSize());
-
-        // Check KeyPair
-        if (keyPair == null) throw new RuntimeException("KeyPair is null");
-
-        // Return KeyPair
-        return keyPair;
-    }
-
-    public static KeyPair loadKeyPair(File keyPairFile) {
-
-        // Check Parameters
-        if (keyPairFile == null) throw new IllegalArgumentException("KeyPair file must not be null");
-        if (!keyPairFile.exists() || !keyPairFile.isFile() || !keyPairFile.canRead()) throw new IllegalArgumentException("KeyPair file does not exist or is not readable");
-
-        // Load KeyPair
-        KeyPair keyPair;
-        try (var bufferedReader = Files.newBufferedReader(keyPairFile.toPath())) {
-            keyPair = KeyPairUtils.readKeyPair(bufferedReader);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read key pair from file", e);
-        }
-
-        // Check KeyPair
-        if (keyPair == null) throw new IllegalArgumentException("KeyPair is null");
-
-        // Return KeyPair
-        return keyPair;
-    }
-
-    public static Certificate loadCertificate(File certificateFile) {
-
-        // Check Parameters
-        if (certificateFile == null) throw new IllegalArgumentException("Certificate file must not be null");
-        if (!certificateFile.exists() || !certificateFile.isFile() || !certificateFile.canRead()) throw new IllegalArgumentException("Certificate file does not exist or is not readable");
-
-        // ToDo Implement Certificate Loading
-        throw new UnsupportedOperationException("Certificate loading not implemented yet");
-    }
-
-    public static File writeKeyPair(KeyPair keyPair, File keyPairFile) {
-
-        // Check Parameters
-        if (keyPair == null) throw new IllegalArgumentException("KeyPair must not be null");
-        if (keyPairFile == null) throw new IllegalArgumentException("KeyPair file must not be null");
-
-        // Create KeyPair File
-        if (keyPairFile.exists()) throw new IllegalArgumentException("KeyPair file already exists");
-        try {
-            if (!keyPairFile.createNewFile()) throw new IOException("Failed to create new KeyPair file");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create KeyPair file", e);
-        }
-
-        // Write KeyPair to File
-        try (var bufferedWriter = Files.newBufferedWriter(keyPairFile.toPath())) {
-            KeyPairUtils.writeKeyPair(keyPair, bufferedWriter);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write key pair to file", e);
-        }
-
-        // Check KeyPair File
-        if (!keyPairFile.exists() || !keyPairFile.isFile()) throw new RuntimeException("KeyPair file does not exist after writing");
-
-        // Return KeyPair File
-        return keyPairFile;
-    }
-
-    public static File writeCertificate(Certificate certificate, File certificateFile) {
-
-        // Check Parameters
-        if (certificate == null) throw new IllegalArgumentException("Certificate must not be null");
-        if (certificateFile == null) throw new IllegalArgumentException("Certificate file must not be null");
-
-        // Create Certificate File
-        if (certificateFile.exists()) throw new IllegalArgumentException("Certificate file already exists");
-        try {
-            if (!certificateFile.createNewFile()) throw new IOException("Failed to create new Certificate file");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create Certificate file", e);
-        }
-
-        // Write Certificate to File
-        try (var bufferedWriter = Files.newBufferedWriter(certificateFile.toPath())) {
-            certificate.writeCertificate(bufferedWriter);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write certificate to file", e);
-        }
-
-        // Check Certificate File
-        if (!certificateFile.exists() || !certificateFile.isFile()) throw new RuntimeException("Certificate file does not exist after writing");
-
-        // Return Certificate File
-        return certificateFile;
-    }
-
-    public static File writeCSR(CSRBuilder csrBuilder, File csrFile) {
-
-        // Check Parameters
-        if (csrBuilder == null) throw new IllegalArgumentException("CSR Builder must not be null");
-        if (csrFile == null) throw new IllegalArgumentException("CSR file must not be null");
-
-        // Create CSR File
-        if (csrFile.exists()) throw new IllegalArgumentException("CSR file already exists");
-        try {
-            if (!csrFile.createNewFile()) throw new IOException("Failed to create new CSR file");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create CSR file", e);
-        }
-
-        // Write CSR to File
-        try (var bufferedWriter = Files.newBufferedWriter(csrFile.toPath())) {
-            csrBuilder.write(bufferedWriter);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write CSR to file", e);
-        }
-
-        // Check CSR File
-        if (!csrFile.exists() || !csrFile.isFile()) throw new RuntimeException("CSR file does not exist after writing");
-
-        // Return CSR File
-        return csrFile;
     }
 
     // Getters

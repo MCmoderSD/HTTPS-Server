@@ -13,7 +13,6 @@ public class Main {
 
         // Load Configuration
         JsonNode config = JsonUtility.getInstance().load("/config.json");
-        System.out.println("Configuration loaded: \n" + config.toPrettyString() + "\n");
 
         // Initialize Server
         Server server = new Server(config);
@@ -24,7 +23,7 @@ public class Main {
 
         // Initialize HTML Module
         HtmlModule htmlModule = new HtmlModule(server);
-        htmlModule.mountHtml("/html/Example.html", "/");
+        htmlModule.mountHtml("/html/example.html", "/");
         System.out.println("Example HTML file mounted at /");
     }
 }

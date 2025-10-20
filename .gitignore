@@ -7,6 +7,9 @@
 ### Docs ###
 docs/java/
 
+### Resources ###
+src/test/resources/config.json
+
 ### Target ###
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -14,7 +17,6 @@ target/
 !**/src/test/**/target/
 
 ### Others ###
-.env
 account.key
 fullchain.pem
 privkey.pem

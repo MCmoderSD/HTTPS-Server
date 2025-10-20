@@ -1,26 +1,34 @@
 package de.MCmoderSD.server.cert;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.shredzone.acme4j.util.KeyPairUtils;
+import org.bouncycastle.operator.OperatorCreationException;
 
 import java.math.BigInteger;
-import java.security.*;
+import java.security.KeyPair;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.SignatureException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchProviderException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import static de.MCmoderSD.server.enums.KeySize.*;
 import static org.bouncycastle.asn1.x509.GeneralName.*;
 import static org.bouncycastle.asn1.x500.style.BCStyle.*;
 import static org.bouncycastle.asn1.x509.Extension.*;
@@ -28,7 +36,8 @@ import static org.bouncycastle.asn1.x509.KeyUsage.*;
 import static org.bouncycastle.asn1.x509.KeyPurposeId.*;
 import static java.util.Calendar.*;
 
-public class SelfSignedCert {
+@SuppressWarnings("unused")
+public class SelfSigner {
 
     // Constants
     private final SecureRandom RANDOM;
@@ -48,7 +57,7 @@ public class SelfSignedCert {
     private final X509Certificate certificate;
 
     // Constructor
-    public SelfSignedCert(KeyPair privateKey, JsonNode config, SecureRandom RANDOM, String BC_PROVIDER, String SIGNATURE_ALGORITHM) {
+    public SelfSigner(KeyPair privateKey, JsonNode config, SecureRandom RANDOM, String BC_PROVIDER, String SIGNATURE_ALGORITHM) {
 
         // Check Constants
         if (RANDOM == null) throw new IllegalArgumentException("SecureRandom cannot be null");
@@ -65,7 +74,7 @@ public class SelfSignedCert {
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
 
         // Load Expiration Days
-        if (!config.has("expirationDays") || config.get("expirationDays").isNull() || config.get("expirationDays").isEmpty()) throw new IllegalArgumentException("Expiration days is required in the configuration");
+        if (!config.has("expirationDays") || config.get("expirationDays").isNull()) throw new IllegalArgumentException("Expiration days is required in the configuration");
         var expirationMillis = config.get("expirationDays").asLong() * 24 * 60 * 60 * 1000; // Convert days to milliseconds
         if (expirationMillis <= 0 || expirationMillis > 366L * 24L * 60L * 60L * 1000L) throw new IllegalArgumentException("Expiration days must be between 1 and 366");
 
@@ -207,5 +216,9 @@ public class SelfSignedCert {
 
     public X509Certificate getCertificate() {
         return certificate;
+    }
+
+    public X509Certificate[] getChain() {
+        return new X509Certificate[] { certificate };
     }
 }
