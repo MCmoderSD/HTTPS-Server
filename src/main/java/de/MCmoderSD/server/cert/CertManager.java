@@ -1,22 +1,33 @@
 package de.MCmoderSD.server.cert;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.MCmoderSD.server.enums.KeySize;
-import org.bouncycastle.asn1.crmf.CertTemplateBuilder;
-import org.bouncycastle.asn1.x509.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.shredzone.acme4j.util.KeyPairUtils;
+import org.shredzone.acme4j.Certificate;
 
-import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.security.*;
-import java.security.cert.Certificate;
+import java.util.HexFormat;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.KeyManagementException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HexFormat;
+import java.security.Security;
+import java.security.SecureRandom;
 
+import static de.MCmoderSD.server.cert.ACME.*;
+import static de.MCmoderSD.server.cert.CertUtil.*;
 import static de.MCmoderSD.server.enums.KeySize.RSA_4096;
 
 public class CertManager {
@@ -36,9 +47,6 @@ public class CertManager {
     }
 
     // SSLContext
-    private final char[] keyPassword;
-    private final KeyPair privateKey;
-    private final X509Certificate certificate;
     private final SSLContext sslContext;
 
     // Constructor
@@ -51,22 +59,25 @@ public class CertManager {
         // Load Key Password
         String password = config.get("keyPassword").asText();
         if (password.isBlank()) throw new IllegalArgumentException("Key password cannot be empty");
-        keyPassword = password.toCharArray();
+        char[] keyPassword = password.toCharArray();
 
         // Declare Paths variables
-        File privateKeyFile;
-        File certificateFile;
+        File privateKeyFile = null;
+        File certificateFile = null;
         boolean privateKeyExists = false;
         boolean certificateExists = false;
 
+        // Declare Certificate variables
+        KeyPair privateKey;
+        X509Certificate certificate;
+        X509Certificate[] chain;
 
         // Check if Paths were provided for a provided certificate
         boolean hasPaths = config.has("paths") && !config.get("paths").isNull() && !config.get("paths").isEmpty();
         boolean createIfMissing = hasPaths && config.has("createIfMissing") && !config.get("createIfMissing").isNull() && config.get("createIfMissing").asBoolean();
 
-        if (hasPaths && !createIfMissing) // ToDo: Load existing certificate from paths
-            throw new UnsupportedOperationException("Loading existing provided certificates is not yet implemented");
-        else if (hasPaths) {
+        // Get Paths if provided and check if files exist
+        if (hasPaths) {
 
             // Check if files exist
             JsonNode paths = config.get("paths");
@@ -91,8 +102,24 @@ public class CertManager {
         }
 
         // Load Private Key and Certificate (if both files exist)
-        if (hasPaths && privateKeyExists && certificateExists) // ToDo: Load existing certificate from paths
-            throw new UnsupportedOperationException("Loading existing provided certificates is not yet implemented");
+        if (hasPaths && privateKeyExists && certificateExists) {
+
+            // Load Private Key and Certificate
+            privateKey = loadKeyPair(privateKeyFile);
+            certificate = loadCertificate(certificateFile);
+            chain = loadCertificateChain(certificateFile);
+
+            // Validate Certificate
+            if (!isCertificateValid(certificate)) throw new IllegalArgumentException("The provided certificate is not valid");
+
+            // Initialize SSLContext
+            sslContext = initSSLContext(
+                    initKeyManager(keyPassword, privateKey.getPrivate(), chain),
+                    initTrustManager(chain)
+            );
+
+            return; // Exit constructor as everything is loaded
+        }
 
         // Load Key Size if provided
         KeySize keySize;
@@ -100,34 +127,52 @@ public class CertManager {
         else keySize = RSA_4096;
 
         // Load or Create Private Key
-        if (hasPaths && privateKeyExists) // ToDo: Load existing private key from
-            throw new UnsupportedOperationException("Loading existing private keys is not yet implemented");
-        else privateKey = KeyPairUtils.createKeyPair(keySize.getSize());
+        if (hasPaths && privateKeyExists) privateKey = loadKeyPair(privateKeyFile);
+        else privateKey = createKeyPair(keySize);
 
         // Save Private Key if path provided and file does not exist
-        if (hasPaths) // ToDo: Save private key to file
-            System.out.println("Saving private keys is not yet implemented");
+        if (hasPaths && createIfMissing && !privateKeyExists) writeKeyPair(privateKey, privateKeyFile);
 
         // Initialize Certificate (using ACME or Self-Signed)
-        if (config.has("acmeSigned") && !config.get("acmeSigned").isNull() && !config.get("acmeSigned").isEmpty()) certificate = useAcmeSigned(privateKey, config.get("acmeSigned"));
-        else if (config.has("selfSigned") && !config.get("selfSigned").isNull() && !config.get("selfSigned").isEmpty()) certificate = useSelfSigned(privateKey, config.get("selfSigned"));
+        if (config.has("acmeSigned") && !config.get("acmeSigned").isNull() && !config.get("acmeSigned").isEmpty()) {
+
+            // Use ACME Signed Certificate
+            var acmeCert = useAcmeSigned(privateKey, config.get("acmeSigned"), keySize);
+
+            // Obtain Private Key and Certificate
+            certificate = acmeCert.getCertificate();
+            chain = acmeCert.getCertificateChain().toArray(new X509Certificate[0]);
+
+            // Validate Certificate
+            if (!isCertificateValid(certificate)) throw new IllegalArgumentException("The ACME signed certificate is not valid");
+
+            // Save Certificate if path provided and file does not exist
+            if (hasPaths && createIfMissing && !certificateExists) writeCertificate(acmeCert, certificateFile);
+
+            // Initialize SSLContext
+            sslContext = initSSLContext(
+                    initKeyManager(keyPassword, privateKey.getPrivate(), chain),
+                    initTrustManager(chain)
+            );
+
+            return; // Exit constructor as everything is loaded
+        } else if (config.has("selfSigned") && !config.get("selfSigned").isNull() && !config.get("selfSigned").isEmpty()) certificate = useSelfSigned(privateKey, config.get("selfSigned"));
         else throw new IllegalArgumentException("Either 'acmeSigned' or 'selfSigned' configuration must be provided");
 
-        // Save Certificate if path provided and file does not exist
-        if (hasPaths && !certificateExists) // ToDo: Save certificate to file
-            throw new UnsupportedOperationException("Saving certificates is not yet implemented");
-
         // Check Private Key and Certificate
-        // ToDo check validity
+        if (!verifyCertificate(certificate, privateKey.getPublic())) throw new IllegalArgumentException("The self-signed certificate is not valid for the provided private key");
 
         // Initialize SSLContext
         sslContext = initSSLContext(
-                initKeyManager(privateKey.getPrivate(), certificate, keyPassword),
+                initKeyManager(keyPassword, privateKey.getPrivate(), certificate),
                 initTrustManager(certificate)
         );
     }
 
-    private X509Certificate useAcmeSigned(KeyPair privateKey, JsonNode config) {
+    private static Certificate useAcmeSigned(KeyPair privateKey, JsonNode config, KeySize keySize) {
+
+        // Check Private Key
+        if (privateKey == null || privateKey.getPrivate() == null || privateKey.getPublic() == null) throw new IllegalArgumentException("Private key cannot be null");
 
         // Check ACME Config
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
@@ -143,7 +188,7 @@ public class CertManager {
 
         // Load Email
         String email = config.get("email").asText();
-        if (email.isBlank() || !email.contains("@") || email.contains(" ") || email.startsWith("@") || email.endsWith("@")) throw new IllegalArgumentException("Invalid email address");
+        if (!validateEmail(email)) throw new IllegalArgumentException("Invalid email address");
 
         // Load Account Key
         String accountKeyPath = config.get("accountKey").asText();
@@ -173,62 +218,58 @@ public class CertManager {
 
         // Load or Create Account Key Pair
         KeyPair accountKey;
-        if (newAccount) accountKey = KeyPairUtils.createKeyPair(RSA_4096.getSize());
-        else {
-            try {
-                accountKey = KeyPairUtils.readKeyPair(Files.newBufferedReader(accountKeyFile.toPath()));
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to read ACME account key from file: " + accountKeyFile, e);
-            }
-        }
+        if (newAccount) accountKey = createKeyPair(keySize);
+        else accountKey = loadKeyPair(accountKeyFile);
 
         // Initialize ACME
         ACME acme = new ACME(email, accountKey, zoneId, apiToken, debug);
 
         // Order Certificate
-        X509Certificate certificate = acme.orderCertificate(privateKey, domains).getCertificate();
+        System.out.println("Requesting ACME signed certificate...");
+        Certificate certificate = acme.orderCertificate(privateKey, domains);
 
-        // Check Private Key and Certificate
-        if (privateKey == null || privateKey.getPrivate() == null || privateKey.getPublic() == null) throw new IllegalArgumentException("Private key cannot be null");
+        // Check Certificate
         if (certificate == null) throw new IllegalArgumentException("Certificate cannot be null");
+        if (!isCertificateValid(certificate.getCertificate())) throw new IllegalArgumentException("Certificate is not valid");
 
         // Save Account Key if new
-        if (newAccount) ACME.writeKeyPair(accountKey, accountKeyFile);
+        if (newAccount) writeKeyPair(accountKey, accountKeyFile);
 
         // Return Certificate
         return certificate;
     }
 
-    private X509Certificate useSelfSigned(KeyPair privateKey, JsonNode config) {
+    private static X509Certificate useSelfSigned(KeyPair privateKey, JsonNode config) {
 
         // Check Private Key and Config
         if (privateKey == null || privateKey.getPrivate() == null || privateKey.getPublic() == null) throw new IllegalArgumentException("Private key cannot be null");
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Self-signed certificate configuration cannot be null or empty");
 
         // Initialize Self-Signed Certificate
-        SelfSignedCert selfSignedCert = new SelfSignedCert(privateKey, config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
+        SelfSigner selfSigner = new SelfSigner(privateKey, config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
 
         // Obtain Private Key and Certificate
-        return selfSignedCert.getCertificate();
+        return selfSigner.getCertificate();
     }
 
     // Initialize KeyManager
-    public static KeyManager[] initKeyManager(PrivateKey privateKey, X509Certificate certificate, char[] keyPassword) {
+    public static KeyManager[] initKeyManager(char[] keyPassword, PrivateKey privateKey, X509Certificate... certificate) {
         try {
 
             // Check inputs
-            if (privateKey == null) throw new IllegalArgumentException("Private key cannot be null");
-            if (certificate == null) throw new IllegalArgumentException("Certificate cannot be null");
             if (keyPassword == null || keyPassword.length == 0) throw new IllegalArgumentException("Key password cannot be null or empty");
+            if (privateKey == null) throw new IllegalArgumentException("Private key cannot be null");
+            if (certificate == null || certificate.length == 0) throw new IllegalArgumentException("Certificate cannot be null or empty");
+            for (var cert : certificate) if (cert == null) throw new IllegalArgumentException("Certificate cannot contain null entries");
 
             // Initialize KeyStore
             KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
             keyStore.load(null, null);
             keyStore.setKeyEntry(
-                    HexFormat.of().formatHex(MessageDigest.getInstance(FINGERPRINT_ALGORITHM).digest(certificate.getEncoded())).toLowerCase(),
+                    HexFormat.of().formatHex(MessageDigest.getInstance(FINGERPRINT_ALGORITHM).digest(certificate[0].getEncoded())).toLowerCase(),
                     privateKey,
                     keyPassword,
-                    new Certificate[] { certificate }
+                    certificate
             );
 
             // Initialize KeyManagerFactory
@@ -242,18 +283,28 @@ public class CertManager {
     }
 
     // Initialize TrustManager
-    public static TrustManager[] initTrustManager(X509Certificate certificate) {
+    public static TrustManager[] initTrustManager(X509Certificate... certificate) {
         try {
 
             // Check input
-            if (certificate == null) throw new IllegalArgumentException("Certificate cannot be null");
+            if (certificate == null || certificate.length == 0) throw new IllegalArgumentException("Certificate cannot be null or empty");
+            for (var cert : certificate) if (cert == null) throw new IllegalArgumentException("Certificate cannot contain null entries");
 
             // Initialize TrustStore
             KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
             trustStore.load(null, null);
-            trustStore.setCertificateEntry(
-                    HexFormat.of().formatHex(MessageDigest.getInstance(FINGERPRINT_ALGORITHM).digest(certificate.getEncoded())).toLowerCase(),
-                    certificate
+
+            // Add all certificates except the leaf (first) to the trust store
+            var certCount = certificate.length;
+            for (var i = certCount - 1; i > 0; i--) trustStore.setCertificateEntry(
+                    HexFormat.of().formatHex(MessageDigest.getInstance(FINGERPRINT_ALGORITHM).digest(certificate[i].getEncoded())).toLowerCase(),
+                    certificate[i]
+            );
+
+            // Add the leaf certificate only if it's the only one provided
+            if (certCount == 1) trustStore.setCertificateEntry(
+                    HexFormat.of().formatHex(MessageDigest.getInstance(FINGERPRINT_ALGORITHM).digest(certificate[0].getEncoded())).toLowerCase(),
+                    certificate[0]
             );
 
             // Initialize TrustManagerFactory
