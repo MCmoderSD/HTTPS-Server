@@ -1,12 +1,12 @@
 {
-  "host":"localhost",
-  "httpPort":8000,
-  "httpsPort":8080,
-  "baseUrl":"/",
+  "host": "0.0.0.0",
+  "httpPort": 80,
+  "httpsPort": 443,
+  "baseUrl": "/",
 
   "certificate": {
     "keyPassword": "Your Key Password",
-    "keySize": 2048,
+    "keySize": 4096,
 
     "createIfMissing": true,
     "paths": {
@@ -18,10 +18,12 @@
       "debug": true,
       "email": "Your@Email.com",
       "accountKey": "account.key",
+
       "cloudflare": {
         "zoneId": "Your Zone ID",
         "apiToken": "Your API Key"
       },
+
       "domains": [
         "example.com",
         "www.example.com"
@@ -30,6 +32,7 @@
 
     "selfSigned": {
       "expirationDays": 366,
+
       "subject": {
         "commonName": "localhost",
         "organization": "Your Organization",
@@ -38,10 +41,13 @@
         "state": "Your State",
         "country": "DE"
       },
+
       "subjectAltNames": {
+
         "dns": [
           "localhost"
         ],
+
         "ip": [
           "127.0.0.1",
           "::1"

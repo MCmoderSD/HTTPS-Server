@@ -6,10 +6,10 @@
 
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>2.0.0</version>
+    <version>3.0.0</version>
 
     <name>HTTPS-Server</name>
-    <description>HTTPS-Server is a simple Java HTTPS server built on top of Undertow, designed to serve static and dynamic content with built-in support for self-signed SSL certificates</description>
+    <description>A simple Java HTTPS server built on top of Undertow, designed to serve static and dynamic content with built-in support for self-signed SSL certificates</description>
 
     <distributionManagement>
         <repository>
