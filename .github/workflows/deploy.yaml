@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - main
 
 permissions:
   contents: write
@@ -18,12 +19,12 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4.6.0
+        uses: actions/setup-java@v5.0.0
         with:
           java-version: '21'
           distribution: 'zulu'
@@ -56,14 +57,13 @@ jobs:
           EOL
 
       - name: Build and Deploy
-        run: mvn clean install deploy
+        run: mvn clean install deploy -U
 
-      - name: Install GitHub CLI and authenticate
-        run: |
-          curl -sSL https://github.com/cli/cli/releases/download/v2.63.2/gh_2.63.2_linux_amd64.deb -o gh-cli.deb
-          sudo dpkg -i gh-cli.deb
-          sudo apt install -f
-          echo ${{ env.token }} | gh auth login --with-token
+      - name: Install GitHub CLI
+        run: sudo apt update && sudo apt upgrade -y && sudo apt install -y gh
+
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token < ${{ env.token }}
 
       - name: Check for existing release
         run: |
