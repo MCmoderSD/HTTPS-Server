@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'release') || contains(github.event.head_commit.message, 'Release')
 
     steps:
@@ -63,7 +63,9 @@ jobs:
         run: sudo apt update && sudo apt upgrade -y && sudo apt install -y gh
 
       - name: Authenticate GitHub CLI
-        run: gh auth login --with-token < ${{ env.token }}
+        run: echo "$token" | gh auth login --with-token
+        env:
+          token: ${{ env.token }}
 
       - name: Check for existing release
         run: |
