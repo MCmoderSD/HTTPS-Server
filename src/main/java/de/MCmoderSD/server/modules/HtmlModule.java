@@ -27,36 +27,51 @@ public class HtmlModule {
     }
 
     public void mountHtml(String resourcePath, String urlPath) {
+        mountHtml(server, resourcePath, urlPath);
+    }
+
+    public static void mountHtml(Server server, String resourcePath, String urlPath) {
 
         // Validate inputs
+        if (server == null) throw new IllegalArgumentException("Server instance cannot be null");
         if (resourcePath == null || resourcePath.isBlank()) throw new IllegalArgumentException("Resource path cannot be null or empty");
 
         // Load HTML from resource
         try (InputStream stream = HtmlModule.class.getResourceAsStream(resourcePath)) {
             if (stream == null) throw new IllegalArgumentException("Resource not found: " + resourcePath);
-            else mountHtml(stream.readAllBytes(), urlPath);
+            else mountHtml(server, stream.readAllBytes(), urlPath);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read resource: " + resourcePath, e);
         }
     }
 
     public void mountHtml(File file, String urlPath) {
+        mountHtml(server, file, urlPath);
+    }
+
+    public static void mountHtml(Server server, File file, String urlPath) {
 
         // Validate inputs
+        if (server == null) throw new IllegalArgumentException("Server instance cannot be null");
         if (file == null) throw new IllegalArgumentException("File cannot be null");
         if (!file.exists() || !file.isFile() || !file.canRead()) throw new IllegalArgumentException("File does not exist or is not readable: " + file);
 
         // Mount HTML file
         try {
-            mountHtml(Files.readAllBytes(file.toPath()), urlPath);
+            mountHtml(server, Files.readAllBytes(file.toPath()), urlPath);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read file: " + file, e);
         }
     }
 
     public void mountHtml(byte[] html, String urlPath) {
+        mountHtml(server, html, urlPath);
+    }
+
+    public static void mountHtml(Server server, byte[] html, String urlPath) {
 
         // Validate inputs
+        if (server == null) throw new IllegalArgumentException("Server instance cannot be null");
         if (html == null || html.length == 0) throw new IllegalArgumentException("HTML content cannot be null or empty");   // Non-empty HTML
         if (urlPath == null || urlPath.isBlank()) throw new IllegalArgumentException("URL path cannot be null");            // Non-null URL path
         if (urlPath.contains(" ")) throw new IllegalArgumentException("URL path cannot contain spaces");                    // No spaces in URL path
