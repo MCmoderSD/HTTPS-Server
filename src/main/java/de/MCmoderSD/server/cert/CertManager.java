@@ -123,7 +123,7 @@ public class CertManager {
 
         // Load Key Size if provided
         KeySize keySize;
-        if (config.has("keySize") || !config.get("keySize").isNull() || KeySize.isValidSize(config.get("keySize").asInt())) keySize = KeySize.getKeySize(config.get("keySize").asInt());
+        if (config.has("keySize") && !config.get("keySize").isNull() && KeySize.isValidSize(config.get("keySize").asInt())) keySize = KeySize.getKeySize(config.get("keySize").asInt());
         else keySize = RSA_4096;
 
         // Load or Create Private Key
