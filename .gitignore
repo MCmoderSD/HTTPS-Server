@@ -4,6 +4,11 @@
 *.iml
 *.ipr
 
+### Certificates ###
+certificates/account.key
+certificates/fullchain.pem
+certificates/privkey.pem
+
 ### Docs ###
 docs/java/
 
@@ -15,8 +20,3 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-
-### Others ###
-account.key
-fullchain.pem
-privkey.pem

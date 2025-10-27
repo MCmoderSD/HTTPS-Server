@@ -1,6 +1,5 @@
 package de.MCmoderSD.server.cert;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -14,6 +13,8 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.OperatorCreationException;
+
+import tools.jackson.databind.JsonNode;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -34,6 +35,7 @@ import static org.bouncycastle.asn1.x500.style.BCStyle.*;
 import static org.bouncycastle.asn1.x509.Extension.*;
 import static org.bouncycastle.asn1.x509.KeyUsage.*;
 import static org.bouncycastle.asn1.x509.KeyPurposeId.*;
+
 import static java.util.Calendar.*;
 
 @SuppressWarnings("unused")
@@ -74,18 +76,18 @@ public class SelfSigner {
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
 
         // Load Expiration Days
-        if (!config.has("expirationDays") || config.get("expirationDays").isNull()) throw new IllegalArgumentException("Expiration days is required in the configuration");
+        if (!config.has("expirationDays") || config.get("expirationDays").isNull() || !config.get("expirationDays").isNumber()) throw new IllegalArgumentException("Expiration days must be provided and be a valid long integer");
         var expirationMillis = config.get("expirationDays").asLong() * 24 * 60 * 60 * 1000; // Convert days to milliseconds
         if (expirationMillis <= 0 || expirationMillis > 366L * 24L * 60L * 60L * 1000L) throw new IllegalArgumentException("Expiration days must be between 1 and 366");
 
         // Load Subject Details
         JsonNode subject = config.get("subject");
-        CN = subject.has("commonName") ?            subject.get("commonName").asText()          : null;
-        O  = subject.has("organization") ?          subject.get("organization").asText()        : null;
-        OU = subject.has("organizationalUnit") ?    subject.get("organizationalUnit").asText()  : null;
-        L  = subject.has("locality") ?              subject.get("locality").asText()            : null;
-        ST = subject.has("state") ?                 subject.get("state").asText()               : null;
-        C  = subject.has("country") ?               subject.get("country").asText()             : null;
+        CN = subject.has("commonName") ?            subject.get("commonName").asString()            : null;
+        O  = subject.has("organization") ?          subject.get("organization").asString()          : null;
+        OU = subject.has("organizationalUnit") ?    subject.get("organizationalUnit").asString()    : null;
+        L  = subject.has("locality") ?              subject.get("locality").asString()              : null;
+        ST = subject.has("state") ?                 subject.get("state").asString()                 : null;
+        C  = subject.has("country") ?               subject.get("country").asString()               : null;
 
         // Validate subject details
         if (CN == null || CN.isBlank()) throw new IllegalArgumentException("Common Name (CN) is required in the subject");
@@ -112,13 +114,13 @@ public class SelfSigner {
 
         // Parse DNS entries
         if (dnsEntries != null && dnsEntries.isArray()) for (var i = 0; i < dnsEntries.size(); i++) {
-            String dns = dnsEntries.get(i).asText();
+            String dns = dnsEntries.get(i).asString();
             if (dns != null && !dns.isBlank()) sanList.add(new GeneralName(dNSName, dns));
         }
 
         // Parse IP entries
         if (ipEntries != null && ipEntries.isArray()) for (var i = 0; i < ipEntries.size(); i++) {
-            String ip = ipEntries.get(i).asText();
+            String ip = ipEntries.get(i).asString();
             if (ip != null && !ip.isBlank()) sanList.add(new GeneralName(GeneralName.iPAddress, ip));
         }
 

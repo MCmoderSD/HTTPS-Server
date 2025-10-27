@@ -1,13 +1,16 @@
 package de.MCmoderSD.server.core;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.MCmoderSD.server.cert.CertManager;
+
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.PathHandler;
 
+import tools.jackson.databind.JsonNode;
+
 import javax.net.ssl.SSLContext;
+
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -37,16 +40,21 @@ public class Server {
     // Constructor
     public Server(JsonNode config) {
 
-        // Suppress Logging
-        setLogLevel(OFF);
+        // Check Configuration
+        if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Configuration cannot be null or empty");
+        if (config.has("host") && (config.get("host").isNull() || !config.get("host").isString())) throw new IllegalArgumentException("Host cannot be null or empty");
+        if (config.has("httpPort") && (config.get("httpPort").isNull() || !config.get("httpPort").isInt())) throw new IllegalArgumentException("HTTP port must be an integer");
+        if (config.has("httpsPort") && (config.get("httpsPort").isNull() || !config.get("httpsPort").isInt())) throw new IllegalArgumentException("HTTPS port must be an integer");
+        if (config.has("baseUrl") && (config.get("baseUrl").isNull() || !config.get("baseUrl").isString())) throw new IllegalArgumentException("Base URL cannot be null or empty");
 
-        // Load HTTPS Server Configuration
-        host = config.path("host").asText(DEFAULT_ROUTE);
-        httpPort = config.path("httpPort").asInt(DEFAULT_HTTP_PORT);
-        httpsPort = config.path("httpsPort").asInt(DEFAULT_HTTPS_PORT);
-        baseUrl = config.path("baseUrl").asText(DEFAULT_BASE_URL);
+        // Load Server Configuration
+        host = config.has("host") ? config.get("host").asString() : DEFAULT_ROUTE;
+        httpPort = config.has("httpPort") ? config.get("httpPort").asInt() : DEFAULT_HTTP_PORT;
+        httpsPort = config.has("httpsPort") ? config.get("httpsPort").asInt() : DEFAULT_HTTPS_PORT;
+        baseUrl = config.has("baseUrl") ? config.get("baseUrl").asString() : DEFAULT_BASE_URL;
 
         // Validate Server Configuration
+        if (host.isBlank()) throw new IllegalArgumentException("Host cannot be null or empty");
         if (httpPort < 1 || httpPort > 65535) throw new IllegalArgumentException("HTTP port must be between 1 and 65535");
         if (httpsPort < 1 || httpsPort > 65535) throw new IllegalArgumentException("HTTPS port must be between 1 and 65535");
         if (httpPort == httpsPort) throw new IllegalArgumentException("HTTP and HTTPS ports must be different");
@@ -64,6 +72,9 @@ public class Server {
                 .addHttpsListener(httpsPort, host, sslContext)
                 .setHandler(Handlers.path().addPrefixPath(baseUrl, pathHandler))
                 .build();
+
+        // Suppress Logging
+        setLogLevel(OFF);
     }
 
     // Static Methods

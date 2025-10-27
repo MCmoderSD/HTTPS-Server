@@ -1,18 +1,21 @@
 package de.MCmoderSD.server.cert;
 
 import de.MCmoderSD.server.enums.KeySize;
-import com.fasterxml.jackson.databind.JsonNode;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.shredzone.acme4j.Certificate;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HexFormat;
+import tools.jackson.databind.JsonNode;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HexFormat;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.KeyManagementException;
@@ -26,9 +29,9 @@ import java.security.cert.X509Certificate;
 import java.security.Security;
 import java.security.SecureRandom;
 
-import static de.MCmoderSD.server.cert.ACME.*;
+import static de.MCmoderSD.server.cert.ACME.validateEmail;
+import  static de.MCmoderSD.server.enums.KeySize.*;
 import static de.MCmoderSD.server.cert.CertUtil.*;
-import static de.MCmoderSD.server.enums.KeySize.RSA_4096;
 
 public class CertManager {
 
@@ -54,10 +57,10 @@ public class CertManager {
 
         // Check Configuration
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Certificate configuration cannot be null or empty");
-        if (!config.has("keyPassword") || config.get("keyPassword").isNull()) throw new IllegalArgumentException("Key password is required in the configuration");
+        if (!config.has("keyPassword") || config.get("keyPassword").isNull() || !config.get("keyPassword").isString()) throw new IllegalArgumentException("Key password is required");
 
         // Load Key Password
-        String password = config.get("keyPassword").asText();
+        String password = config.get("keyPassword").asString();
         if (password.isBlank()) throw new IllegalArgumentException("Key password cannot be empty");
         char[] keyPassword = password.toCharArray();
 
@@ -74,19 +77,19 @@ public class CertManager {
 
         // Check if Paths were provided for a provided certificate
         boolean hasPaths = config.has("paths") && !config.get("paths").isNull() && !config.get("paths").isEmpty();
-        boolean createIfMissing = hasPaths && config.has("createIfMissing") && !config.get("createIfMissing").isNull() && config.get("createIfMissing").asBoolean();
+        boolean createIfMissing = hasPaths && config.has("createIfMissing") && !config.get("createIfMissing").isNull() && config.get("createIfMissing").isBoolean() && config.get("createIfMissing").asBoolean();
 
         // Get Paths if provided and check if files exist
         if (hasPaths) {
 
             // Check if files exist
             JsonNode paths = config.get("paths");
-            if (!paths.has("privateKey") || paths.get("privateKey").isNull()) throw new IllegalArgumentException("Private key path is required");
-            if (!paths.has("certificate") || paths.get("certificate").isNull()) throw new IllegalArgumentException("Certificate path is required");
+            if (!paths.has("privateKey") || paths.get("privateKey").isNull() || !paths.get("privateKey").isString()) throw new IllegalArgumentException("Private key path is required");
+            if (!paths.has("certificate") || paths.get("certificate").isNull() || !paths.get("certificate").isString()) throw new IllegalArgumentException("Certificate path is required");
 
             // Load Paths
-            String privateKeyPath = paths.get("privateKey").asText();
-            String certificatePath = paths.get("certificate").asText();
+            String privateKeyPath = paths.get("privateKey").asString();
+            String certificatePath = paths.get("certificate").asString();
 
             // Check Paths
             if (privateKeyPath.isBlank()) throw new IllegalArgumentException("Private key path cannot be empty");
@@ -123,7 +126,7 @@ public class CertManager {
 
         // Load Key Size if provided
         KeySize keySize;
-        if (config.has("keySize") && !config.get("keySize").isNull() && KeySize.isValidSize(config.get("keySize").asInt())) keySize = KeySize.getKeySize(config.get("keySize").asInt());
+        if (config.has("keySize") && !config.get("keySize").isNull() && config.get("keySize").isInt() && isValidSize(config.get("keySize").asInt())) keySize = getKeySize(config.get("keySize").asInt());
         else keySize = RSA_4096;
 
         // Load or Create Private Key
@@ -183,22 +186,22 @@ public class CertManager {
 
         // Load Cloudflare Config
         JsonNode cloudflare = config.get("cloudflare");
-        if (!cloudflare.has("zoneId") || cloudflare.get("zoneId").isNull()) throw new IllegalArgumentException("Cloudflare zone ID is required");
-        if (!cloudflare.has("apiToken") || cloudflare.get("apiToken").isNull()) throw new IllegalArgumentException("Cloudflare API token is required");
+        if (!cloudflare.has("zoneId") || cloudflare.get("zoneId").isNull() || !cloudflare.get("zoneId").isString()) throw new IllegalArgumentException("Cloudflare zone ID is required");
+        if (!cloudflare.has("apiToken") || cloudflare.get("apiToken").isNull() || !cloudflare.get("apiToken").isString()) throw new IllegalArgumentException("Cloudflare API token is required");
 
         // Load Email
-        String email = config.get("email").asText();
+        String email = config.get("email").asString();
         if (!validateEmail(email)) throw new IllegalArgumentException("Invalid email address");
 
         // Load Account Key
-        String accountKeyPath = config.get("accountKey").asText();
+        String accountKeyPath = config.get("accountKey").asString();
         if (accountKeyPath.isBlank()) throw new IllegalArgumentException("ACME account key cannot be empty");
         File accountKeyFile = new File(accountKeyPath);
         boolean newAccount = !accountKeyFile.exists() || !accountKeyFile.isFile() || !accountKeyFile.canRead();
 
         // Load Zone ID and API Token
-        String zoneId = cloudflare.get("zoneId").asText();
-        String apiToken = cloudflare.get("apiToken").asText();
+        String zoneId = cloudflare.get("zoneId").asString();
+        String apiToken = cloudflare.get("apiToken").asString();
 
         // Check Zone ID and API Token
         if (zoneId.isBlank()) throw new IllegalArgumentException("Cloudflare zone ID cannot be empty");
@@ -207,14 +210,14 @@ public class CertManager {
         // Load Domains
         JsonNode domainsList = config.get("domains");
         String[] domains = new String[domainsList.size()];
-        for (var i = 0; i < domainsList.size(); i++) domains[i] = domainsList.get(i).asText();
+        for (var i = 0; i < domainsList.size(); i++) domains[i] = domainsList.get(i).asString();
 
         // Check Domains
         if (domains.length == 0) throw new IllegalArgumentException("At least one domain must be specified");
         for (var domain : domains) if (domain.isBlank()) throw new IllegalArgumentException("Domain names cannot be empty");
 
         // Check for debug mode
-        boolean debug = config.has("debug") && !config.get("debug").isNull() && config.get("debug").asBoolean();
+        boolean debug = config.has("debug") && !config.get("debug").isNull() && config.get("debug").isBoolean() && config.get("debug").asBoolean();
 
         // Load or Create Account Key Pair
         KeyPair accountKey;

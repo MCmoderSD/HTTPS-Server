@@ -6,7 +6,7 @@
 
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.4</version>
 
     <name>HTTPS-Server</name>
     <description>A simple Java HTTPS server built on top of Undertow, designed to serve static and dynamic content with built-in support for self-signed SSL certificates</description>
@@ -39,14 +39,14 @@
         <dependency>
             <groupId>de.MCmoderSD</groupId>
             <artifactId>JsonUtility</artifactId>
-            <version>1.3.3</version>
+            <version>1.3.4</version>
         </dependency>
 
         <!-- Cloudflare API -->
         <dependency>
             <groupId>de.MCmoderSD</groupId>
             <artifactId>Cloudflare-API</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
 
         <!-- Undertow -->
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.81</version>
+            <version>1.82</version>
         </dependency>
 
         <!-- SLF4J -->

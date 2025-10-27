@@ -1,7 +1,8 @@
-import com.fasterxml.jackson.databind.JsonNode;
 import de.MCmoderSD.json.JsonUtility;
 import de.MCmoderSD.server.core.Server;
 import de.MCmoderSD.server.modules.HtmlModule;
+
+import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

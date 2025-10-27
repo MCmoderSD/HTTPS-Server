@@ -45,7 +45,7 @@ Add the dependency:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.0.1</version>
+    <version>3.0.4</version>
 </dependency>
 ```
 
@@ -53,9 +53,9 @@ Add the dependency:
 The server is configured via a JSON configuration file. Example:
 ```json
 {
-  "host": "example.com",
-  "httpPort": 8080,
-  "httpsPort": 8000,
+  "host": "0.0.0.0",
+  "httpPort": 80,
+  "httpsPort": 443,
   "baseUrl": "/",
 
   "certificate": {
@@ -64,7 +64,7 @@ The server is configured via a JSON configuration file. Example:
 
     "createIfMissing": true,
     "paths": {
-      "privateKey": "path/to/your/private.pem",
+      "privateKey": "path/to/your/privkey.pem",
       "certificate": "path/to/your/certificate.pem"
     },
 
@@ -174,10 +174,11 @@ The server is configured via a JSON configuration file. Example:
 
 ## Usage Example
 ```java
-import com.fasterxml.jackson.databind.JsonNode;
 import de.MCmoderSD.json.JsonUtility;
 import de.MCmoderSD.server.core.Server;
 import de.MCmoderSD.server.modules.HtmlModule;
+
+import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
