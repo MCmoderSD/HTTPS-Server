@@ -45,7 +45,7 @@ Add the dependency:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.0.5</version>
+    <version>3.1.0</version>
 </dependency>
 ```
 
@@ -174,34 +174,21 @@ The server is configured via a JSON configuration file. Example:
 
 ## Usage Example
 ```java
-import de.MCmoderSD.json.JsonUtility;
-import de.MCmoderSD.server.core.Server;
-import de.MCmoderSD.server.modules.HtmlModule;
+void main() throws IOException, URISyntaxException {
 
-import tools.jackson.databind.JsonNode;
+  // Load Configuration
+  JsonNode config = JsonUtility.getInstance().load("/config.json");
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+  // Initialize Server
+  Server server = new Server(config);
 
-@SuppressWarnings("ALL")
-public class Main {
+  // Start Server
+  server.start();
+  System.out.printf("Server started at https://%s:%d%s%n", server.getHost(), server.getHttpsPort(), server.getBaseUrl());
 
-    public static void main(String[] args) throws IOException, URISyntaxException {
-
-        // Load Configuration
-        JsonNode config = JsonUtility.getInstance().load("/config.json");
-
-        // Initialize Server
-        Server server = new Server(config);
-
-        // Start Server
-        server.start();
-        System.out.printf("Server started at https://%s:%d%s%n", server.getHost(), server.getHttpsPort(), server.getBaseUrl());
-
-        // Initialize HTML Module
-        HtmlModule htmlModule = new HtmlModule(server);
-        htmlModule.mountHtml("/html/example.html", "/");
-        System.out.println("Example HTML file mounted at /");
-    }
+  // Initialize HTML Module
+  HtmlModule htmlModule = new HtmlModule(server);
+  htmlModule.mountHtml("/html/example.html", "/");
+  IO.println("Example HTML file mounted at /");
 }
 ```

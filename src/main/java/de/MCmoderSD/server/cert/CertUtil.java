@@ -22,12 +22,19 @@ import java.security.KeyPair;
 
 import static de.MCmoderSD.server.enums.KeySize.RSA_4096;
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings({"unused", "UnusedReturnValue", "BooleanMethodIsAlwaysInverted"})
 public class CertUtil {
 
     // Constants
     private static final String CERTIFICATE_TYPE = "X.509";
     private static final KeySize DEFAULT_KEY_SIZE = RSA_4096;
+
+    // Private Methods
+    private static boolean createParentDirectory(File file) {
+        var parent = file.getParentFile();
+        if (parent != null && !parent.exists()) return parent.mkdirs();
+        return true;
+    }
 
     // Static KeyPair Methods
     public static KeyPair createKeyPair() {
@@ -80,7 +87,7 @@ public class CertUtil {
         // Create KeyPair File
         if (keyPairFile.exists()) throw new IllegalArgumentException("KeyPair file already exists");
         try {
-            if (!keyPairFile.mkdirs()) throw new IOException("Failed to create directories for KeyPair file");
+            if (!createParentDirectory(keyPairFile)) throw new IOException("Failed to create parent directories for KeyPair file");
             if (!keyPairFile.createNewFile()) throw new IOException("Failed to create new KeyPair file");
         } catch (IOException e) {
             throw new RuntimeException("Failed to create KeyPair file", e);
@@ -157,7 +164,7 @@ public class CertUtil {
         // Create Certificate File
         if (certificateFile.exists()) throw new IllegalArgumentException("Certificate file already exists");
         try {
-            if (!certificateFile.mkdirs()) throw new IOException("Failed to create directories for Certificate file");
+            if (!createParentDirectory(certificateFile)) throw new IOException("Failed to create parent directories for Certificate file");
             if (!certificateFile.createNewFile()) throw new IOException("Failed to create new Certificate file");
         } catch (IOException e) {
             throw new RuntimeException("Failed to create Certificate file", e);
@@ -186,7 +193,7 @@ public class CertUtil {
         // Create CSR File
         if (csrFile.exists()) throw new IllegalArgumentException("CSR file already exists");
         try {
-            if (!csrFile.mkdirs()) throw new IOException("Failed to create directories for CSR file");
+            if (!createParentDirectory(csrFile)) throw new IOException("Failed to create directories for CSR file");
             if (!csrFile.createNewFile()) throw new IOException("Failed to create new CSR file");
         } catch (IOException e) {
             throw new RuntimeException("Failed to create CSR file", e);

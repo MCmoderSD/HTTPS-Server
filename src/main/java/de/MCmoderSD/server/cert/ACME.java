@@ -274,7 +274,6 @@ public class ACME {
 
             // Find DNS-01 Challenge and get Digest
             Challenge challenge = authorization.findChallenge(TYPE).orElseThrow(() -> new RuntimeException("No DNS-01 challenge found for domain: " + domain));
-            if (challenge == null) throw new RuntimeException("DNS-01 challenge is null for domain: " + domain);
             String digest = ((Dns01Challenge) challenge).getDigest();
             if (digest == null || digest.isBlank()) throw new RuntimeException("Challenge digest is null or empty for domain: " + digest);
 
