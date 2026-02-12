@@ -4,13 +4,10 @@ import de.MCmoderSD.server.modules.HtmlModule;
 
 import tools.jackson.databind.JsonNode;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
-void main() throws IOException, URISyntaxException {
+void main() {
 
     // Load Configuration
-    JsonNode config = JsonUtility.getInstance().load("/config.json");
+    JsonNode config = JsonUtility.getInstance().loadResource("/config.json");
 
     // Initialize Server
     Server server = new Server(config);

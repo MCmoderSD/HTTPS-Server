@@ -6,7 +6,7 @@
 
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.1.0</version>
+    <version>3.1.1</version>
 
     <name>HTTPS-Server</name>
     <description>A simple Java HTTPS server built on top of Undertow, designed to serve static and dynamic content with built-in support for self-signed SSL certificates</description>
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>de.MCmoderSD</groupId>
             <artifactId>JsonUtility</artifactId>
-            <version>1.4.2</version>
+            <version>1.5.1</version>
         </dependency>
 
         <!-- Cloudflare API -->

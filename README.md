@@ -45,7 +45,7 @@ Add the dependency:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.1.0</version>
+    <version>3.1.1</version>
 </dependency>
 ```
 
@@ -177,7 +177,7 @@ The server is configured via a JSON configuration file. Example:
 void main() throws IOException, URISyntaxException {
 
   // Load Configuration
-  JsonNode config = JsonUtility.getInstance().load("/config.json");
+  JsonNode config = JsonUtility.getInstance().loadResource("/config.json");
 
   // Initialize Server
   Server server = new Server(config);
