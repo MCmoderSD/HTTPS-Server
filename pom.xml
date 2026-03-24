@@ -6,7 +6,7 @@
 
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.1.1</version>
+    <version>3.1.2</version>
 
     <name>HTTPS-Server</name>
     <description>A simple Java HTTPS server built on top of Undertow, designed to serve static and dynamic content with built-in support for self-signed SSL certificates</description>
@@ -39,21 +39,21 @@
         <dependency>
             <groupId>de.MCmoderSD</groupId>
             <artifactId>JsonUtility</artifactId>
-            <version>1.5.1</version>
+            <version>1.5.2</version>
         </dependency>
 
         <!-- Cloudflare API -->
         <dependency>
             <groupId>de.MCmoderSD</groupId>
             <artifactId>Cloudflare-API</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.2</version>
         </dependency>
 
         <!-- Undertow -->
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
-            <version>2.3.22.Final</version>
+            <version>2.3.24.Final</version>
         </dependency>
 
         <!-- JBoss Threads -->
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.shredzone.acme4j</groupId>
             <artifactId>acme4j-client</artifactId>
-            <version>4.0.0</version>
+            <version>5.0.0</version>
         </dependency>
 
         <!-- Bouncy Castle -->
@@ -88,7 +88,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>26.0.2-1</version>
+            <version>26.1.0</version>
         </dependency>
 
     </dependencies>

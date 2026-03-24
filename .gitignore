@@ -9,9 +9,6 @@ certificates/account.key
 certificates/fullchain.pem
 certificates/privkey.pem
 
-### Docs ###
-docs/java/
-
 ### Resources ###
 src/test/resources/config.json
 
