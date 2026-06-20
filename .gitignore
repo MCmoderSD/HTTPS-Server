@@ -1,8 +1,5 @@
 ### IntelliJ IDEA ###
 .idea/
-*.iws
-*.iml
-*.ipr
 
 ### Certificates ###
 certificates/account.key

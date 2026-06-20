@@ -30,7 +30,7 @@ import java.security.Security;
 import java.security.SecureRandom;
 
 import static de.MCmoderSD.server.cert.ACME.validateEmail;
-import  static de.MCmoderSD.server.enums.KeySize.*;
+import static de.MCmoderSD.server.enums.KeySize.*;
 import static de.MCmoderSD.server.cert.CertUtil.*;
 
 public class CertManager {
@@ -60,15 +60,15 @@ public class CertManager {
         if (!config.has("keyPassword") || config.get("keyPassword").isNull() || !config.get("keyPassword").isString()) throw new IllegalArgumentException("Key password is required");
 
         // Load Key Password
-        String password = config.get("keyPassword").asString();
+        var password = config.get("keyPassword").asString();
         if (password.isBlank()) throw new IllegalArgumentException("Key password cannot be empty");
-        char[] keyPassword = password.toCharArray();
+        var keyPassword = password.toCharArray();
 
         // Declare Paths variables
         File privateKeyFile = null;
         File certificateFile = null;
-        boolean privateKeyExists = false;
-        boolean certificateExists = false;
+        var privateKeyExists = false;
+        var certificateExists = false;
 
         // Declare Certificate variables
         KeyPair privateKey;
@@ -76,20 +76,20 @@ public class CertManager {
         X509Certificate[] chain;
 
         // Check if Paths were provided for a provided certificate
-        boolean hasPaths = config.has("paths") && !config.get("paths").isNull() && !config.get("paths").isEmpty();
-        boolean createIfMissing = hasPaths && config.has("createIfMissing") && !config.get("createIfMissing").isNull() && config.get("createIfMissing").isBoolean() && config.get("createIfMissing").asBoolean();
+        var hasPaths = config.has("paths") && !config.get("paths").isNull() && !config.get("paths").isEmpty();
+        var createIfMissing = hasPaths && config.has("createIfMissing") && !config.get("createIfMissing").isNull() && config.get("createIfMissing").isBoolean() && config.get("createIfMissing").asBoolean();
 
         // Get Paths if provided and check if files exist
         if (hasPaths) {
 
             // Check if files exist
-            JsonNode paths = config.get("paths");
+            var paths = config.get("paths");
             if (!paths.has("privateKey") || paths.get("privateKey").isNull() || !paths.get("privateKey").isString()) throw new IllegalArgumentException("Private key path is required");
             if (!paths.has("certificate") || paths.get("certificate").isNull() || !paths.get("certificate").isString()) throw new IllegalArgumentException("Certificate path is required");
 
             // Load Paths
-            String privateKeyPath = paths.get("privateKey").asString();
-            String certificatePath = paths.get("certificate").asString();
+            var privateKeyPath = paths.get("privateKey").asString();
+            var certificatePath = paths.get("certificate").asString();
 
             // Check Paths
             if (privateKeyPath.isBlank()) throw new IllegalArgumentException("Private key path cannot be empty");
@@ -185,31 +185,31 @@ public class CertManager {
         if (!config.has("domains") || config.get("domains").isNull() || config.get("domains").isEmpty() || !config.get("domains").isArray()) throw new IllegalArgumentException("At least one domain is required");
 
         // Load Cloudflare Config
-        JsonNode cloudflare = config.get("cloudflare");
+        var cloudflare = config.get("cloudflare");
         if (!cloudflare.has("zoneId") || cloudflare.get("zoneId").isNull() || !cloudflare.get("zoneId").isString()) throw new IllegalArgumentException("Cloudflare zone ID is required");
         if (!cloudflare.has("apiToken") || cloudflare.get("apiToken").isNull() || !cloudflare.get("apiToken").isString()) throw new IllegalArgumentException("Cloudflare API token is required");
 
         // Load Email
-        String email = config.get("email").asString();
+        var email = config.get("email").asString();
         if (!validateEmail(email)) throw new IllegalArgumentException("Invalid email address");
 
         // Load Account Key
-        String accountKeyPath = config.get("accountKey").asString();
+        var accountKeyPath = config.get("accountKey").asString();
         if (accountKeyPath.isBlank()) throw new IllegalArgumentException("ACME account key cannot be empty");
-        File accountKeyFile = new File(accountKeyPath);
-        boolean newAccount = !accountKeyFile.exists() || !accountKeyFile.isFile() || !accountKeyFile.canRead();
+        var accountKeyFile = new File(accountKeyPath);
+        var newAccount = !accountKeyFile.exists() || !accountKeyFile.isFile() || !accountKeyFile.canRead();
 
         // Load Zone ID and API Token
-        String zoneId = cloudflare.get("zoneId").asString();
-        String apiToken = cloudflare.get("apiToken").asString();
+        var zoneId = cloudflare.get("zoneId").asString();
+        var apiToken = cloudflare.get("apiToken").asString();
 
         // Check Zone ID and API Token
         if (zoneId.isBlank()) throw new IllegalArgumentException("Cloudflare zone ID cannot be empty");
         if (apiToken.isBlank()) throw new IllegalArgumentException("Cloudflare API token cannot be empty");
 
         // Load Domains
-        JsonNode domainsList = config.get("domains");
-        String[] domains = new String[domainsList.size()];
+        var domainsList = config.get("domains");
+        var domains = new String[domainsList.size()];
         for (var i = 0; i < domainsList.size(); i++) domains[i] = domainsList.get(i).asString();
 
         // Check Domains
@@ -217,7 +217,7 @@ public class CertManager {
         for (var domain : domains) if (domain.isBlank()) throw new IllegalArgumentException("Domain names cannot be empty");
 
         // Check for debug mode
-        boolean debug = config.has("debug") && !config.get("debug").isNull() && config.get("debug").isBoolean() && config.get("debug").asBoolean();
+        var debug = config.has("debug") && !config.get("debug").isNull() && config.get("debug").isBoolean() && config.get("debug").asBoolean();
 
         // Load or Create Account Key Pair
         KeyPair accountKey;
@@ -225,11 +225,11 @@ public class CertManager {
         else accountKey = loadKeyPair(accountKeyFile);
 
         // Initialize ACME
-        ACME acme = new ACME(email, accountKey, zoneId, apiToken, debug);
+        var acme = new ACME(email, accountKey, zoneId, apiToken, debug);
 
         // Order Certificate
-        System.out.println("Requesting ACME signed certificate...");
-        Certificate certificate = acme.orderCertificate(privateKey, domains);
+        IO.println("Requesting ACME signed certificate...");
+        var certificate = acme.orderCertificate(privateKey, domains);
 
         // Check Certificate
         if (certificate == null) throw new IllegalArgumentException("Certificate cannot be null");
@@ -249,14 +249,14 @@ public class CertManager {
         if (config == null || config.isNull() || config.isEmpty()) throw new IllegalArgumentException("Self-signed certificate configuration cannot be null or empty");
 
         // Initialize Self-Signed Certificate
-        SelfSigner selfSigner = new SelfSigner(privateKey, config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
+        var selfSigner = new SelfSigner(privateKey, config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
 
         // Obtain Private Key and Certificate
         return selfSigner.getCertificate();
     }
 
     // Initialize KeyManager
-    public static KeyManager[] initKeyManager(char[] keyPassword, PrivateKey privateKey, X509Certificate... certificate) {
+    private static KeyManager[] initKeyManager(char[] keyPassword, PrivateKey privateKey, X509Certificate... certificate) {
         try {
 
             // Check inputs
@@ -266,7 +266,7 @@ public class CertManager {
             for (var cert : certificate) if (cert == null) throw new IllegalArgumentException("Certificate cannot contain null entries");
 
             // Initialize KeyStore
-            KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+            var keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
             keyStore.load(null, null);
             keyStore.setKeyEntry(
                     HexFormat.of().formatHex(MessageDigest.getInstance(FINGERPRINT_ALGORITHM).digest(certificate[0].getEncoded())).toLowerCase(),
@@ -276,7 +276,7 @@ public class CertManager {
             );
 
             // Initialize KeyManagerFactory
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            var keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keyManagerFactory.init(keyStore, keyPassword);
             return keyManagerFactory.getKeyManagers();
 
@@ -286,7 +286,7 @@ public class CertManager {
     }
 
     // Initialize TrustManager
-    public static TrustManager[] initTrustManager(X509Certificate... certificate) {
+    private static TrustManager[] initTrustManager(X509Certificate... certificate) {
         try {
 
             // Check input
@@ -294,7 +294,7 @@ public class CertManager {
             for (var cert : certificate) if (cert == null) throw new IllegalArgumentException("Certificate cannot contain null entries");
 
             // Initialize TrustStore
-            KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
+            var trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
             trustStore.load(null, null);
 
             // Add all certificates except the leaf (first) to the trust store
@@ -311,7 +311,7 @@ public class CertManager {
             );
 
             // Initialize TrustManagerFactory
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            var trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init(trustStore);
             return trustManagerFactory.getTrustManagers();
 
@@ -321,7 +321,7 @@ public class CertManager {
     }
 
     // Initialize SSLContext
-    public static SSLContext initSSLContext(KeyManager[] keyManager, TrustManager[] trustManager) {
+    private static SSLContext initSSLContext(KeyManager[] keyManager, TrustManager[] trustManager) {
         try {
 
             // Check inputs
@@ -329,7 +329,7 @@ public class CertManager {
             if (trustManager == null || trustManager.length == 0) throw new IllegalArgumentException("TrustManager cannot be null or empty");
 
             // Initialize SSLContext
-            SSLContext sslContext = SSLContext.getInstance(SSL_PROTOCOL);
+            var sslContext = SSLContext.getInstance(SSL_PROTOCOL);
             sslContext.init(keyManager, trustManager, RANDOM);
 
             // Return SSLContext
@@ -340,7 +340,7 @@ public class CertManager {
         }
     }
 
-    // Getter for SSLContext
+    // Getter
     public SSLContext getSSLContext() {
         return sslContext;
     }

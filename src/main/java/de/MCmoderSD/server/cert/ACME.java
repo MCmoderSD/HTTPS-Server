@@ -8,8 +8,6 @@ import org.shredzone.acme4j.AccountBuilder;
 import org.shredzone.acme4j.Certificate;
 import org.shredzone.acme4j.Order;
 import org.shredzone.acme4j.Session;
-import org.shredzone.acme4j.Status;
-import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
 import org.shredzone.acme4j.exception.AcmeException;
 import org.shredzone.acme4j.util.CSRBuilder;
@@ -82,7 +80,7 @@ public class ACME {
 
         // Initialize ACME Session
         session = new Session(debug ? STAGING_SERVER_URL : PRODUCTION_SERVER_URL);
-        if (debug) System.out.println("ACME Debug Mode enabled: Using Let's Encrypt Staging Server");
+        if (debug) IO.println("ACME Debug Mode enabled: Using Let's Encrypt Staging Server");
 
         try {
 
@@ -93,7 +91,7 @@ public class ACME {
                     .agreeToTermsOfService()
                     .create(session);
 
-            if (debug) System.out.println("ACME Created Account\n");
+            if (debug) IO.println("ACME Created Account\n");
 
         } catch (AcmeException e) {
             throw new RuntimeException("Failed to create or retrieve ACME account", e);
@@ -162,18 +160,18 @@ public class ACME {
 
         // Normalize Domain
         domain = normalizeDomain(domain);
-        if (debug) System.out.println("ACME Normalized Domain for TXT record: " + domain);
+        if (debug) IO.println("ACME Normalized Domain for TXT record: " + domain);
 
         // Check for existing ACME TXT records and remove them
-        HashSet<DnsRecord> records = cloudflareClient.getRecords();
+        var records = cloudflareClient.getRecords();
         records.removeIf(dnsRecord -> !dnsRecord.getName().contains(CHALLENGE_PREFIX));
         records.forEach(cloudflareClient::deleteRecord);
-        HashSet<String> recordIds = new HashSet<>(cloudflareClient.getRecordMap().keySet());
+        var recordIds = new HashSet<>(cloudflareClient.getRecordMap().keySet());
         for (var record : records) if (recordIds.contains(record.getId())) throw new RuntimeException("Failed to delete existing ACME TXT record for domain: " + domain);
-        if (debug) System.out.println("ACME Deleted existing TXT records for domain: " + domain);
+        if (debug) IO.println("ACME Deleted existing TXT records for domain: " + domain);
 
         // Create TXT record
-        DnsRecord record = cloudflareClient.createRecord(DnsRecord.builder(TXT)
+        var record = cloudflareClient.createRecord(DnsRecord.builder(TXT)
                 .name(CHALLENGE_PREFIX + domain)
                 .content(digest)
                 .ttl(TTL)
@@ -184,7 +182,7 @@ public class ACME {
         var challengeRecord = cloudflareClient.getRecordMap().get(record.getId());
         if (challengeRecord == null) throw new RuntimeException("Failed to create ACME TXT record for domain: " + domain);
         if (!challengeRecord.getName().equals(CHALLENGE_PREFIX + domain) || !challengeRecord.getContent().equals(digest)) throw new RuntimeException("Created ACME TXT record does not match expected values for domain: " + domain);
-        if (debug) System.out.println("ACME Created TXT record: " + challengeRecord.getName() + " -> " + challengeRecord.getContent());
+        if (debug) IO.println("ACME Created TXT record: " + challengeRecord.getName() + " -> " + challengeRecord.getContent());
         return challengeRecord;
     }
 
@@ -209,7 +207,7 @@ public class ACME {
         for (var domain : domains) if (domain == null || domain.isBlank() || domain.contains(SPACE)) throw new IllegalArgumentException("Domain must be a valid domain");
 
 
-        if (debug) System.out.println("ACME Ordering Certificate for domains: " + String.join(", ", domains));
+        if (debug) IO.println("ACME Ordering Certificate for domains: " + String.join(", ", domains));
 
 
         // Normalize Domains
@@ -220,11 +218,11 @@ public class ACME {
                 .toArray(String[]::new);                            // Collect back to array
 
 
-        if (debug) System.out.println("ACME Normalized Domains: " + String.join(", ", domains));
+        if (debug) IO.println("ACME Normalized Domains: " + String.join(", ", domains));
 
 
         // Check for wildcards
-        boolean hasWildcard = Arrays.stream(domains).anyMatch(domain -> domain.startsWith(WILDCARD_PREFIX));
+        var hasWildcard = Arrays.stream(domains).anyMatch(domain -> domain.startsWith(WILDCARD_PREFIX));
         if (hasWildcard) if (domains[0].startsWith(WILDCARD_PREFIX)) {
 
             // Only wildcard domain provided
@@ -240,18 +238,18 @@ public class ACME {
         }
 
 
-        if (debug) System.out.println("ACME Final Domains for Order: " + String.join(", ", domains));
+        if (debug) IO.println("ACME Final Domains for Order: " + String.join(", ", domains));
 
 
         // Create Order
-        Order order = createOrder(account, domains);
+        var order = createOrder(account, domains);
         if (order == null) throw new RuntimeException("Order is null");
-        if (debug) System.out.println("ACME Created Order for domains: " + String.join(", ", domains));
+        if (debug) IO.println("ACME Created Order for domains: " + String.join(", ", domains));
 
 
         // Handle Authorizations
         var authorizations = order.getAuthorizations();
-        if (debug) System.out.println("ACME Handling " + authorizations.size() + " Authorizations...\n");
+        if (debug) IO.println("ACME Handling " + authorizations.size() + " Authorizations...\n");
 
         // Loop through Authorizations
         for (var authorization : authorizations) {
@@ -260,35 +258,35 @@ public class ACME {
             if (authorization == null) throw new RuntimeException("Authorization is null");
 
             // Get Domain from Authorization
-            String domain = authorization.getIdentifier().getDomain();
+            var domain = authorization.getIdentifier().getDomain();
 
             // Check if expired
-            Instant expiry = authorization.getExpires().orElseGet(Instant::now);
+            var expiry = authorization.getExpires().orElseGet(Instant::now);
             if (Instant.now().isAfter(expiry)) throw new RuntimeException("Authorization for domain " + domain + " has expired at " + expiry);
 
             // Skip if already valid
-            if (debug && authorization.getStatus() == VALID) System.out.println("ACME Authorization for domain " + domain + " is already valid, skipping...\n");
-            else if (debug) System.out.println("ACME Handling Authorization for domain: " + domain);
+            if (debug && authorization.getStatus() == VALID) IO.println("ACME Authorization for domain " + domain + " is already valid, skipping...\n");
+            else if (debug) IO.println("ACME Handling Authorization for domain: " + domain);
             if (authorization.getStatus() == VALID) continue;
 
 
             // Find DNS-01 Challenge and get Digest
-            Challenge challenge = authorization.findChallenge(TYPE).orElseThrow(() -> new RuntimeException("No DNS-01 challenge found for domain: " + domain));
-            String digest = ((Dns01Challenge) challenge).getDigest();
+            var challenge = authorization.findChallenge(TYPE).orElseThrow(() -> new RuntimeException("No DNS-01 challenge found for domain: " + domain));
+            var digest = ((Dns01Challenge) challenge).getDigest();
             if (digest == null || digest.isBlank()) throw new RuntimeException("Challenge digest is null or empty for domain: " + digest);
 
 
             // Create ACME TXT Record and wait for propagation
-            DnsRecord acmeRecord = createAcmeRecord(domain, digest);
+            var acmeRecord = createAcmeRecord(domain, digest);
             var wait = new BigDecimal(TTL).multiply(BigDecimal.valueOf(5d / 4d)).movePointRight(3).toBigInteger().longValue();
-            if (debug) System.out.println("ACME Waiting " + wait / 1000 + "s for DNS propagation...");
+            if (debug) IO.println("ACME Waiting " + wait / 1000 + "s for DNS propagation...");
             sleep(wait);
 
 
             // Trigger Challenge
             try {
                 challenge.trigger();
-                if (debug) System.out.println("ACME Triggered DNS-01 challenge for domain: " + domain);
+                if (debug) IO.println("ACME Triggered DNS-01 challenge for domain: " + domain);
             } catch (AcmeException e) {
                 if (!deleteAcmeRecord(acmeRecord)) throw new RuntimeException("Failed to delete ACME TXT record after challenge trigger failure for domain: " + domain);
                 throw new RuntimeException("Failed to trigger challenge for domain: " + domain, e);
@@ -297,7 +295,7 @@ public class ACME {
 
             try {
                 do {
-                    if (debug) System.out.println("ACME Polling for challenge status for domain: " + domain + "...");
+                    if (debug) IO.println("ACME Polling for challenge status for domain: " + domain + "...");
 
                     // Fetch Challenge Status
                     try {
@@ -307,7 +305,7 @@ public class ACME {
                     }
 
                     // Check Challenge Status
-                    Status status = challenge.getStatus();
+                    var status = challenge.getStatus();
                     switch (status) {
                         case INVALID -> throw new RuntimeException("Challenge for domain " + domain + " is invalid");
                         case REVOKED -> throw new RuntimeException("Challenge for domain " + domain + " has been revoked");
@@ -323,7 +321,7 @@ public class ACME {
                     sleep(new BigDecimal(TTL).multiply(BigDecimal.valueOf(5d / 4d - 1d)).movePointRight(3).toBigInteger().longValue());
 
                 } while (challenge.getStatus() == PENDING || challenge.getStatus() == PROCESSING || challenge.getStatus() != READY || challenge.getStatus() != VALID);
-                if (debug) System.out.println("ACME Challenge for domain " + domain + " is now " + challenge.getStatus());
+                if (debug) IO.println("ACME Challenge for domain " + domain + " is now " + challenge.getStatus());
 
             } catch (RuntimeException e) {
                 if (!deleteAcmeRecord(acmeRecord)) throw new RuntimeException("Failed to delete ACME TXT record after challenge polling failure for domain: " + domain);
@@ -333,21 +331,21 @@ public class ACME {
 
             // Delete ACME TXT Record
             if (!deleteAcmeRecord(acmeRecord)) throw new RuntimeException("Failed to delete ACME TXT record for domain: " + domain);
-            if (debug) System.out.println("ACME Deleted TXT record: " + acmeRecord.getName() + " -> " + acmeRecord.getContent() + "\n");
+            if (debug) IO.println("ACME Deleted TXT record: " + acmeRecord.getName() + " -> " + acmeRecord.getContent() + "\n");
         }
 
 
         // Create CSR Builder
-        CSRBuilder csrBuilder = new CSRBuilder();
+        var csrBuilder = new CSRBuilder();
         for (var domain : domains) csrBuilder.addDomain(domain);
         csrBuilder.setCommonName(hasWildcard ? domains[1] : domains[0]);
-        if (debug) System.out.println("ACME Created CSR Builder with domains: " + String.join(", ", domains));
+        if (debug) IO.println("ACME Created CSR Builder with domains: " + String.join(", ", domains));
 
 
         // Sign CSR with Domain Key Pair
         try {
             csrBuilder.sign(domainKey);
-            if (debug) System.out.println("ACME Signed CSR with domain key");
+            if (debug) IO.println("ACME Signed CSR with domain key");
         } catch (IOException e) {
             throw new RuntimeException("Failed to sign CSR", e);
         }
@@ -366,14 +364,14 @@ public class ACME {
         // Finalize Order
         try {
             order.execute(csr);
-            if (debug) System.out.println("ACME Ordered CSR with domain key");
+            if (debug) IO.println("ACME Ordered CSR with domain key");
         } catch (AcmeException e) {
             throw new RuntimeException("Failed to execute order", e);
         }
 
 
         do {
-            if (debug) System.out.println("ACME Polling for order status...");
+            if (debug) IO.println("ACME Polling for order status...");
 
             // Fetch Order Status
             try {
@@ -383,7 +381,7 @@ public class ACME {
             }
 
             // Check Order Status
-            Status status = order.getStatus();
+            var status = order.getStatus();
             switch (status) {
                 case INVALID -> throw new RuntimeException("Order is invalid");
                 case REVOKED -> throw new RuntimeException("Order has been revoked");
@@ -399,10 +397,10 @@ public class ACME {
             sleep(new BigDecimal(TTL).multiply(BigDecimal.valueOf(5d / 4d - 1d)).movePointRight(3).toBigInteger().longValue());
 
         } while (order.getStatus() == PENDING || order.getStatus() == PROCESSING || order.getStatus() != READY || order.getStatus() != VALID);
-        if (debug) System.out.println("ACME Order is now " + order.getStatus());
+        if (debug) IO.println("ACME Order is now " + order.getStatus());
 
         // Get Certificate
-        Certificate certificate = order.getCertificate();
+        var certificate = order.getCertificate();
         if (certificate == null) throw new RuntimeException("Certificate is null");
 
         // Return Certificate

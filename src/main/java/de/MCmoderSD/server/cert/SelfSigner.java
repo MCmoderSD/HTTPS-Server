@@ -2,7 +2,6 @@ package de.MCmoderSD.server.cert;
 
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -81,7 +80,7 @@ public class SelfSigner {
         if (expirationMillis <= 0 || expirationMillis > 366L * 24L * 60L * 60L * 1000L) throw new IllegalArgumentException("Expiration days must be between 1 and 366");
 
         // Load Subject Details
-        JsonNode subject = config.get("subject");
+        var subject = config.get("subject");
         CN = subject.has("commonName") ?            subject.get("commonName").asString()            : null;
         O  = subject.has("organization") ?          subject.get("organization").asString()          : null;
         OU = subject.has("organizationalUnit") ?    subject.get("organizationalUnit").asString()    : null;
@@ -108,19 +107,19 @@ public class SelfSigner {
         if (san == null || san.isNull() || san.isEmpty()) throw new IllegalArgumentException("Subject Alternative Names (SAN) cannot be null or empty");
 
         // Split the SAN into DNS and IP entries
-        ArrayList<GeneralName> sanList = new ArrayList<>();
-        JsonNode dnsEntries = san.has("dns") ? san.get("dns") : null;
-        JsonNode ipEntries = san.has("ip") ? san.get("ip") : null;
+        var sanList = new ArrayList<GeneralName>();
+        var dnsEntries = san.has("dns") ? san.get("dns") : null;
+        var ipEntries = san.has("ip") ? san.get("ip") : null;
 
         // Parse DNS entries
         if (dnsEntries != null && dnsEntries.isArray()) for (var i = 0; i < dnsEntries.size(); i++) {
-            String dns = dnsEntries.get(i).asString();
+            var dns = dnsEntries.get(i).asString();
             if (dns != null && !dns.isBlank()) sanList.add(new GeneralName(dNSName, dns));
         }
 
         // Parse IP entries
         if (ipEntries != null && ipEntries.isArray()) for (var i = 0; i < ipEntries.size(); i++) {
-            String ip = ipEntries.get(i).asString();
+            var ip = ipEntries.get(i).asString();
             if (ip != null && !ip.isBlank()) sanList.add(new GeneralName(GeneralName.iPAddress, ip));
         }
 
@@ -139,14 +138,14 @@ public class SelfSigner {
         if (expirationMillis <= 0) throw new IllegalArgumentException("Expiration milliseconds must be positive");
 
         // Build the subject
-        X500NameBuilder subjectBuilder = new X500NameBuilder(INSTANCE);
+        var subjectBuilder = new X500NameBuilder(INSTANCE);
         subjectBuilder.addRDN(BCStyle.CN, CN);                                      // Common Name
         if (O  != null  && !O.isBlank())    subjectBuilder.addRDN(BCStyle.O, O);    // Organization
         if (OU != null  && !OU.isBlank())   subjectBuilder.addRDN(BCStyle.OU, OU);  // Organizational Unit
         if (L  != null  && !L.isBlank())    subjectBuilder.addRDN(BCStyle.L, L);    // Locality
         if (ST != null  && !ST.isBlank())   subjectBuilder.addRDN(BCStyle.ST, ST);  // State or Province
         if (C != null   && !C.isBlank())    subjectBuilder.addRDN(BCStyle.C, C);    // Country (2-letter code)
-        X500Name subject = subjectBuilder.build(); // Build
+        var subject = subjectBuilder.build(); // Build
 
         // Generate a RANDOM positive serial number
         BigInteger serial;
@@ -154,17 +153,17 @@ public class SelfSigner {
         while (serial.signum() <= 0); // must be positive
 
         // Set validity period
-        Calendar calendar = Calendar.getInstance();
+        var calendar = Calendar.getInstance();
         calendar.add(DATE, 0);
         calendar.set(HOUR_OF_DAY, 0);
         calendar.set(MINUTE, 0);
         calendar.set(SECOND, 0);
         calendar.set(MILLISECOND, 0);
-        Date validFrom = calendar.getTime();
-        Date validTill = new Date(validFrom.getTime() + expirationMillis);
+        var validFrom = calendar.getTime();
+        var validTill = new Date(validFrom.getTime() + expirationMillis);
 
         // Create the certificate builder
-        JcaX509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+        var certBuilder = new JcaX509v3CertificateBuilder(
                 subject,                // issuer
                 serial,                 // serial number
                 validFrom,              // issued at

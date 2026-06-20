@@ -36,6 +36,8 @@ public class HtmlModule {
         // Validate inputs
         if (server == null) throw new IllegalArgumentException("Server instance cannot be null");
         if (resourcePath == null || resourcePath.isBlank()) throw new IllegalArgumentException("Resource path cannot be null or empty");
+        if (urlPath == null || urlPath.isBlank()) throw new IllegalArgumentException("URL path cannot be null or empty");
+        if (urlPath.contains(" ")) throw new IllegalArgumentException("URL path cannot contain spaces");
 
         // Load HTML from resource
         try (InputStream stream = HtmlModule.class.getResourceAsStream(resourcePath)) {
@@ -56,6 +58,8 @@ public class HtmlModule {
         if (server == null) throw new IllegalArgumentException("Server instance cannot be null");
         if (file == null) throw new IllegalArgumentException("File cannot be null");
         if (!file.exists() || !file.isFile() || !file.canRead()) throw new IllegalArgumentException("File does not exist or is not readable: " + file);
+        if (urlPath == null || urlPath.isBlank()) throw new IllegalArgumentException("URL path cannot be null or empty");
+        if (urlPath.contains(" ")) throw new IllegalArgumentException("URL path cannot contain spaces");
 
         // Mount HTML file
         try {
@@ -74,7 +78,7 @@ public class HtmlModule {
         // Validate inputs
         if (server == null) throw new IllegalArgumentException("Server instance cannot be null");
         if (html == null || html.length == 0) throw new IllegalArgumentException("HTML content cannot be null or empty");   // Non-empty HTML
-        if (urlPath == null || urlPath.isBlank()) throw new IllegalArgumentException("URL path cannot be null");            // Non-null URL path
+        if (urlPath == null || urlPath.isBlank()) throw new IllegalArgumentException("URL path cannot be null or empty");   // Non-null URL path
         if (urlPath.contains(" ")) throw new IllegalArgumentException("URL path cannot contain spaces");                    // No spaces in URL path
         if (!urlPath.startsWith("/")) urlPath = "/" + urlPath;
 

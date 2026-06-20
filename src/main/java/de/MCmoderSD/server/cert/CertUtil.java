@@ -47,7 +47,7 @@ public class CertUtil {
         if (keySize == null) throw new IllegalArgumentException("Key size must not be null");
 
         // Create KeyPair
-        KeyPair keyPair = KeyPairUtils.createKeyPair(keySize.getSize());
+        var keyPair = KeyPairUtils.createKeyPair(keySize.getSize());
 
         // Check KeyPair
         if (keyPair == null) throw new RuntimeException("KeyPair is null");
@@ -116,7 +116,7 @@ public class CertUtil {
         try (var bis = new BufferedInputStream(new FileInputStream(certificateFile))) {
 
             // Initialize Certificate Factory
-            CertificateFactory certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
+            var certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
 
             // Read Certificates
             var certificate = certificateFactory.generateCertificate(bis);
@@ -139,14 +139,14 @@ public class CertUtil {
         try (var bis = new BufferedInputStream(new FileInputStream(certificateFile))) {
 
             // Initialize Certificate Factory
-            CertificateFactory certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
+            var certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
 
             // Read Certificates
             var certificates = certificateFactory.generateCertificates(bis);
             if (certificates == null || certificates.isEmpty()) throw new RuntimeException("No certificates found in file");
 
             // Convert to X509Certificate array
-            X509Certificate [] x509Certificates = new X509Certificate[certificates.size()];
+            var x509Certificates = new X509Certificate[certificates.size()];
             for (var i = 0; i < certificates.size(); i++) x509Certificates[i] = (X509Certificate) certificates.toArray()[i];
             return x509Certificates;
 
