@@ -45,7 +45,7 @@ Add the dependency:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.1.5</version>
+    <version>3.1.6</version>
 </dependency>
 ```
 
@@ -178,6 +178,8 @@ import de.MCmoderSD.json.JsonUtility;
 import de.MCmoderSD.server.core.Server;
 import de.MCmoderSD.server.modules.HtmlModule;
 
+import static java.lang.IO.println;
+
 void main() {
 
   // Load Configuration
@@ -193,6 +195,6 @@ void main() {
   // Initialize HTML Module
   var htmlModule = new HtmlModule(server);
   htmlModule.mountHtml("/html/example.html", "/");
-  IO.println("Example HTML file mounted at /");
+  println("Example HTML file mounted at /");
 }
 ```
