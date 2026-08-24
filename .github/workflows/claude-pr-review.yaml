@@ -32,7 +32,7 @@ jobs:
 
       - id: claude-review
         name: Claude Review
-        uses: anthropics/claude-code-action@v1.0.195
+        uses: anthropics/claude-code-action@v1.0.199
         env:
           GH_TOKEN: ${{ github.token }}
         with:
