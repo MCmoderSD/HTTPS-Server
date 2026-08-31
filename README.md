@@ -19,7 +19,7 @@ The server is ideal for use behind a reverse proxy like **Nginx**, **Apache**, o
 
 ## SSL Certificate Management
 You can choose between three modes:
-1. **Provided Certificates** — Load existing private key and certificate (PEM files).
+1. **Provided Certificates** — Load an existing private key and certificate (PEM files).
 2. **Let's Encrypt (ACME)** — Automatically order certificates using DNS-01 via Cloudflare.
 3. **Self-Signed** — Generate a self-signed certificate (useful behind a reverse proxy).
 
@@ -45,7 +45,7 @@ Add the dependency:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.1.8</version>
+    <version>3.1.9</version>
 </dependency>
 ```
 
@@ -124,7 +124,7 @@ The server is configured via a JSON configuration file. Example:
 - `keyPassword`: Required for loading/creating certificates.
 - `keySize`: One of `2048`, `3072`, or `4096` (optional, defaults to `4096`).
 - `createIfMissing`: Automatically create certificates if missing. (optional, defaults to `false`)
-- `paths`: Specify PEM file locations for private key and certificate.
+- `paths`: Specify PEM file locations for the private key and certificate.
   - `privateKey`: Path to the private key PEM file. (e.g., `privkey.pem`)
   - `certificate`: Path to the certificate PEM file. (e.g., `fullchain.pem`)
 
@@ -133,7 +133,7 @@ The server is configured via a JSON configuration file. Example:
 #### ACME (Let's Encrypt)
 - `debug`: Enable ACME debug logs. (optional, defaults to `false`)
 - `email`: Email for ACME account registration.
-- `accountKey`: Path for storing ACME account key.
+- `accountKey`: Path for storing the ACME account key.
 - `cloudflare`: DNS-01 configuration using Cloudflare.
     - `zoneId`: Your Cloudflare Zone ID (see below).
     - `apiToken`: API token with DNS edit permissions (see below).
