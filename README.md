@@ -45,7 +45,7 @@ Add the dependency:
 <dependency>
     <groupId>de.MCmoderSD</groupId>
     <artifactId>HTTPS-Server</artifactId>
-    <version>3.1.9</version>
+    <version>3.1.10</version>
 </dependency>
 ```
 
