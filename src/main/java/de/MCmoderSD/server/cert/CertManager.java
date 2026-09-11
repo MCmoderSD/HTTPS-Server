@@ -142,14 +142,14 @@ public class CertManager {
             // Use ACME Signed Certificate
             var acmeCert = useAcmeSigned(privateKey, config.get("acmeSigned"), keySize);
 
-            // Obtain Private Key and Certificate
+            // Get Private Key and Certificate
             certificate = acmeCert.getCertificate();
             chain = acmeCert.getCertificateChain().toArray(new X509Certificate[0]);
 
             // Validate Certificate
             if (!isCertificateValid(certificate)) throw new IllegalArgumentException("The ACME signed certificate is not valid");
 
-            // Save Certificate if path provided and file does not exist
+            // Save Certificate if path provided and file do not exist
             if (hasPaths && createIfMissing && !certificateExists) writeCertificate(acmeCert, certificateFile);
 
             // Initialize SSLContext
@@ -160,7 +160,7 @@ public class CertManager {
 
             return; // Exit constructor as everything is loaded
         } else if (config.has("selfSigned") && !config.get("selfSigned").isNull() && !config.get("selfSigned").isEmpty()) certificate = useSelfSigned(privateKey, config.get("selfSigned"));
-        else throw new IllegalArgumentException("Either 'acmeSigned' or 'selfSigned' configuration must be provided");
+        else throw new IllegalArgumentException("Either 'acmeSigned' or 'self-Signed' configuration must be provided");
 
         // Check Private Key and Certificate
         if (!verifyCertificate(certificate, privateKey.getPublic())) throw new IllegalArgumentException("The self-signed certificate is not valid for the provided private key");
@@ -251,7 +251,7 @@ public class CertManager {
         // Initialize Self-Signed Certificate
         var selfSigner = new SelfSigner(privateKey, config, RANDOM, BC_PROVIDER, SIGNATURE_ALGORITHM);
 
-        // Obtain Private Key and Certificate
+        // Get Private Key and Certificate
         return selfSigner.getCertificate();
     }
 

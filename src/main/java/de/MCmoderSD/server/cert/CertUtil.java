@@ -68,7 +68,7 @@ public class CertUtil {
         try (var bufferedReader = Files.newBufferedReader(keyPairFile.toPath())) {
             keyPair = KeyPairUtils.readKeyPair(bufferedReader);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read key pair from file", e);
+            throw new RuntimeException("Failed to read a key pair from a file", e);
         }
 
         // Check KeyPair
@@ -87,17 +87,17 @@ public class CertUtil {
         // Create KeyPair File
         if (keyPairFile.exists()) throw new IllegalArgumentException("KeyPair file already exists");
         try {
-            if (!createParentDirectory(keyPairFile)) throw new IOException("Failed to create parent directories for KeyPair file");
-            if (!keyPairFile.createNewFile()) throw new IOException("Failed to create new KeyPair file");
+            if (!createParentDirectory(keyPairFile)) throw new IOException("Failed to create parent directories for the KeyPair file");
+            if (!keyPairFile.createNewFile()) throw new IOException("Failed to create a new KeyPair file");
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create KeyPair file", e);
+            throw new RuntimeException("Failed to create a KeyPair file", e);
         }
 
         // Write KeyPair to File
         try (var bufferedWriter = Files.newBufferedWriter(keyPairFile.toPath())) {
             KeyPairUtils.writeKeyPair(keyPair, bufferedWriter);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write key pair to file", e);
+            throw new RuntimeException("Failed to write a key pair to a file", e);
         }
 
         // Check KeyPair File
@@ -126,7 +126,7 @@ public class CertUtil {
             return (X509Certificate) certificate;
 
         } catch (IOException | CertificateException e) {
-            throw new RuntimeException("Failed to load certificate from file", e);
+            throw new RuntimeException("Failed to load a certificate from a file", e);
         }
     }
 
@@ -143,7 +143,7 @@ public class CertUtil {
 
             // Read Certificates
             var certificates = certificateFactory.generateCertificates(bis);
-            if (certificates == null || certificates.isEmpty()) throw new RuntimeException("No certificates found in file");
+            if (certificates == null || certificates.isEmpty()) throw new RuntimeException("No certificates were found in file");
 
             // Convert to X509Certificate array
             var x509Certificates = new X509Certificate[certificates.size()];
@@ -151,7 +151,7 @@ public class CertUtil {
             return x509Certificates;
 
         } catch (IOException | CertificateException e) {
-            throw new RuntimeException("Failed to load certificate from file", e);
+            throw new RuntimeException("Failed to load a certificate from a file", e);
         }
     }
 
@@ -164,10 +164,10 @@ public class CertUtil {
         // Create Certificate File
         if (certificateFile.exists()) throw new IllegalArgumentException("Certificate file already exists");
         try {
-            if (!createParentDirectory(certificateFile)) throw new IOException("Failed to create parent directories for Certificate file");
-            if (!certificateFile.createNewFile()) throw new IOException("Failed to create new Certificate file");
+            if (!createParentDirectory(certificateFile)) throw new IOException("Failed to create parent directories for the Certificate file");
+            if (!certificateFile.createNewFile()) throw new IOException("Failed to create a new Certificate file");
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create Certificate file", e);
+            throw new RuntimeException("Failed to create a Certificate file", e);
         }
 
         // Write Certificate to File
@@ -193,17 +193,17 @@ public class CertUtil {
         // Create CSR File
         if (csrFile.exists()) throw new IllegalArgumentException("CSR file already exists");
         try {
-            if (!createParentDirectory(csrFile)) throw new IOException("Failed to create directories for CSR file");
-            if (!csrFile.createNewFile()) throw new IOException("Failed to create new CSR file");
+            if (!createParentDirectory(csrFile)) throw new IOException("Failed to create directories for the CSR file");
+            if (!csrFile.createNewFile()) throw new IOException("Failed to create a new CSR file");
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create CSR file", e);
+            throw new RuntimeException("Failed to create a CSR file", e);
         }
 
         // Write CSR to File
         try (var bufferedWriter = Files.newBufferedWriter(csrFile.toPath())) {
             csrBuilder.write(bufferedWriter);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write CSR to file", e);
+            throw new RuntimeException("Failed to write CSR to the file", e);
         }
 
         // Check CSR File

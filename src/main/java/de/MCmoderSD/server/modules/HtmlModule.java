@@ -65,7 +65,7 @@ public class HtmlModule {
         try {
             mountHtml(server, Files.readAllBytes(file.toPath()), urlPath);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read file: " + file, e);
+            throw new RuntimeException("Failed to read the file: " + file, e);
         }
     }
 

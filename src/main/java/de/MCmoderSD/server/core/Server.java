@@ -60,7 +60,7 @@ public class Server {
         if (httpPort == httpsPort) throw new IllegalArgumentException("HTTP and HTTPS ports must be different");
         if (!baseUrl.startsWith("/")) throw new IllegalArgumentException("Base URL must start with '/'");
 
-        // Obtain SSL Context
+        // Get SSL Context
         sslContext = new CertManager(config.get("certificate")).getSSLContext();
 
         // Initialize Path Handler

@@ -94,7 +94,7 @@ public class ACME {
             if (debug) IO.println("ACME Created Account\n");
 
         } catch (AcmeException e) {
-            throw new RuntimeException("Failed to create or retrieve ACME account", e);
+            throw new RuntimeException("Failed to create or retrieve ACME accounts", e);
         }
     }
 
@@ -181,7 +181,7 @@ public class ACME {
         // Check Record Creation
         var challengeRecord = cloudflareClient.getRecordMap().get(record.getId());
         if (challengeRecord == null) throw new RuntimeException("Failed to create ACME TXT record for domain: " + domain);
-        if (!challengeRecord.getName().equals(CHALLENGE_PREFIX + domain) || !challengeRecord.getContent().equals(digest)) throw new RuntimeException("Created ACME TXT record does not match expected values for domain: " + domain);
+        if (!challengeRecord.getName().equals(CHALLENGE_PREFIX + domain) || !challengeRecord.getContent().equals(digest)) throw new RuntimeException("Created ACME TXT record does not match expected values for the domain: " + domain);
         if (debug) IO.println("ACME Created TXT record: " + challengeRecord.getName() + " -> " + challengeRecord.getContent());
         return challengeRecord;
     }
@@ -265,7 +265,7 @@ public class ACME {
             if (Instant.now().isAfter(expiry)) throw new RuntimeException("Authorization for domain " + domain + " has expired at " + expiry);
 
             // Skip if already valid
-            if (debug && authorization.getStatus() == VALID) IO.println("ACME Authorization for domain " + domain + " is already valid, skipping...\n");
+            if (debug && authorization.getStatus() == VALID) IO.println("ACME Authorization for domain " + domain + " it is already valid, skipping...\n");
             else if (debug) IO.println("ACME Handling Authorization for domain: " + domain);
             if (authorization.getStatus() == VALID) continue;
 
@@ -289,7 +289,7 @@ public class ACME {
                 if (debug) IO.println("ACME Triggered DNS-01 challenge for domain: " + domain);
             } catch (AcmeException e) {
                 if (!deleteAcmeRecord(acmeRecord)) throw new RuntimeException("Failed to delete ACME TXT record after challenge trigger failure for domain: " + domain);
-                throw new RuntimeException("Failed to trigger challenge for domain: " + domain, e);
+                throw new RuntimeException("Failed to trigger a challenge for domain: " + domain, e);
             }
 
 
@@ -301,7 +301,7 @@ public class ACME {
                     try {
                         challenge.fetch();
                     } catch (AcmeException e) {
-                        throw new RuntimeException("Failed to fetch challenge status for domain: " + domain, e);
+                        throw new RuntimeException("Failed to fetch challenge status for a domain: " + domain, e);
                     }
 
                     // Check Challenge Status
@@ -345,7 +345,7 @@ public class ACME {
         // Sign CSR with Domain Key Pair
         try {
             csrBuilder.sign(domainKey);
-            if (debug) IO.println("ACME Signed CSR with domain key");
+            if (debug) IO.println("ACME Signed CSR with a domain key");
         } catch (IOException e) {
             throw new RuntimeException("Failed to sign CSR", e);
         }
@@ -364,7 +364,7 @@ public class ACME {
         // Finalize Order
         try {
             order.execute(csr);
-            if (debug) IO.println("ACME Ordered CSR with domain key");
+            if (debug) IO.println("ACME Ordered CSR with a domain key");
         } catch (AcmeException e) {
             throw new RuntimeException("Failed to execute order", e);
         }
